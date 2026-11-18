@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2Finkseal&project-name=pheonixsign&repository-name=pheonixsign&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D&demo-title=PheonixSign&demo-description=Your%20own%20e-signature%20site.%20Upload%20a%20PDF%2C%20place%20fields%2C%20send%20signing%20links%2C%20and%20keep%20the%20signed%20copy%20with%20its%20audit%20certificate.&demo-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2Finkseal&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2Fpheonix-flame%2Finkseal%2Fmain%2Fdocs%2Fimages%2Fbanner.png"><img src="docs/images/deploy-to-vercel.svg" alt="Deploy to Vercel" height="32"></a><br>
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2FPheonixSign&project-name=pheonixsign&repository-name=PheonixSign&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D&demo-title=PheonixSign&demo-description=Your%20own%20e-signature%20site.%20Upload%20a%20PDF%2C%20place%20fields%2C%20send%20signing%20links%2C%20and%20keep%20the%20signed%20copy%20with%20its%20audit%20certificate.&demo-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2FPheonixSign&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2Fpheonix-flame%2FPheonixSign%2Fmain%2Fdocs%2Fimages%2Fbanner.png"><img src="docs/images/deploy-to-vercel.svg" alt="Deploy to Vercel" height="32"></a><br>
   <sub>or <a href="docs/deploy-with-an-agent.md">copy this to your LLM</a></sub>
 </p>
 
@@ -27,25 +27,33 @@ Each organization runs its own copy of PheonixSign, once. So does a person who j
 
 **What you need**
 
-- This repository in your GitHub account (it can be private).
+- This repository, `PheonixSign`, in your GitHub account. It can be private.
 - A [Vercel](https://vercel.com) account, signed in with that GitHub account. The free **Hobby** plan is for personal, non-commercial use; a business belongs on **Pro** ($20 a month).
 - An email account to send from: **Gmail, Yahoo or Zoho** (fine for a small business, no domain needed), your organization's own mail server, or a domain of your own through Resend.
 
-Everything below is free on these plans.
+Neon, Vercel Blob and Resend are free on the plans below. It takes about 15 minutes.
+
+### 0. Starting over? Clear out the old setup first
+
+Skip this on a first install.
+
+1. **Rename the repository**, if it still has an old name: on GitHub, open the repository, then **Settings → General → Repository name**, type `PheonixSign` and click **Rename**. GitHub forwards the old address to the new one.
+2. **Delete the old storage.** In the old Vercel project, open **Storage**. For each store (the Neon database, the Blob store, Resend), click it, open its **Settings**, and delete it. This erases everything in it: accounts, documents and settings. Download anything you want to keep first.
+3. **Delete the old project.** Open the project's **Settings → General**, scroll to the bottom, click **Delete Project** and confirm.
 
 ### 1. Import the project
 
-1. Open [vercel.com/new](https://vercel.com/new) and choose **Continue with GitHub**. If Vercel asks to see your repositories, let it see this one.
-2. Click **Import** next to this repository. Leave every setting as it is and click **Deploy**.
-3. Wait for **Ready**. The site opens on a page saying **Connect a database**: that is expected, step 2 fixes it.
+1. Open [vercel.com/new](https://vercel.com/new) and choose **Continue with GitHub**. If `PheonixSign` is not listed, click **Adjust GitHub App Permissions** and let Vercel see it.
+2. Click **Import** next to `PheonixSign`. Keep the project name `pheonixsign` (it becomes your address, `pheonixsign.vercel.app`, or close to it). Leave every other setting as it is and click **Deploy**.
+3. Wait for **Ready**. The site opens on a page saying **Connect a database**: that is expected, steps 2 to 4 fix it.
 
 > Seeing Vercel's own `404: NOT_FOUND` page instead? Open **Settings → Build and Deployment**, set **Framework Preset** to **Next.js**, leave **Root Directory** empty, save, and redeploy (step 4).
 
 ### 2. Add the database (Neon)
 
 1. In the project, open **Storage** and click **Create Storage**. (Use **Create Storage**, not **Connect Database**.)
-2. Choose **Neon**, pick the **Free** plan and the region closest to you.
-3. Connect it to this project for **Production** and **Preview**. Leave the prefix box **empty**. (A prefix of `INKSEAL` also works, as on the first install; any other prefix does not.)
+2. Choose **Neon** and the **Free** plan, and pick the region closest to you, or an EU region if you sign agreements in the EU. Accept the terms.
+3. Connect it to the project for **Production** and **Preview**. Leave the prefix box empty. If Vercel fills one in, that is fine too: PheonixSign finds the database with or without a prefix.
 
 ### 3. Add file storage (Vercel Blob)
 
@@ -60,29 +68,35 @@ Everything below is free on these plans.
    | **Custom Environment Variable Prefix**                | leave it **empty**. The grey `BLOB` in it is only a hint.                |
    | **Add a read-write token env var to this connection** | **tick it**                                                              |
 
-3. Click **Create**, and connect it to this project for **Production** and **Preview** if Vercel asks.
+3. Click **Create**, and connect it to the project for **Production** and **Preview** if Vercel asks.
 
-Storage now lists two stores, both connected to the project.
+**Storage** now lists two stores, both connected to `pheonixsign`.
 
-### 4. Deploy again
+### 4. Add two settings, then deploy again
 
-Storage only reaches a new build. Open **Deployments**, click **⋯** on the top deployment, choose **Redeploy**, and confirm. Wait for **Ready**.
+Open **Settings → Environment Variables** and add these two, each for **Production** and **Preview**. Tick **Sensitive** if Vercel offers it.
 
-> Want no one else to be able to claim the site first? Before redeploying, add an environment variable named `SETUP_TOKEN` (**Settings → Environment Variables**) with a secret phrase. The setup page will ask for it.
+| Name                 | Value                                                                                                                                                                       | Why                                                                                                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET` | 64 random letters and digits. Let your password manager make them, or run `openssl rand -hex 32`. Keep a copy somewhere safe, and never change it once people use the site. | Signs people in and encrypts the saved email password. Without it, a change of the database password signs everyone out and the email password must be entered again. |
+| `SETUP_TOKEN`        | a secret phrase of your own                                                                                                                                                 | The setup page asks for it, so nobody who finds your address first can make themselves the administrator.                                                             |
+
+Then open **Deployments**, click **⋯** on the top deployment, choose **Redeploy**, and confirm. Storage and settings only reach a new build. Wait for **Ready**.
 
 ### 5. Set up the site
 
-Open your site's address (`https://<project>.vercel.app`) straight away: whoever finishes setup first becomes the administrator.
+Open your site's address (**Visit**, on the project page). It shows **Set up your site**.
 
 1. **Organization or your name**: your business, team or club, or your own name.
 2. **Support email**: where signers' questions and replies go. Your Gmail is fine.
-3. **Your name, email and password**: the administrator's account.
-4. **How should this site send email?** Choose **From our email account** and the service (Gmail, Yahoo, Zoho or another mail server). For your own domain, choose that instead; or decide later.
-5. Click **Finish setup**. If you chose an email account, you land on its form.
+3. **Your name, your email and a password** (15 characters or more): this is the administrator's account. Use the email address you will sign in with.
+4. **How should this site send email?** Choose **From our email account**, and the service under **Which email service?**: Gmail, Yahoo, Zoho or another mail server. For an address at your own domain, choose that instead; or decide later.
+5. **Setup token**: the phrase from step 4.
+6. Click **Finish setup**. You are signed in as the administrator. If you chose an email account, you land on its form.
 
 ### 6. Connect email
 
-In **Settings → Organization → Email setup**, choose how email is sent, fill in the form and click **Save and send me a test email**. The site signs in to the mailbox first and saves nothing if it is refused. The password is stored encrypted and never shown again.
+In **Settings → Organization → Email setup** (where step 5 lands you), choose how email is sent, fill in the form, and click **Save and send me a test email**. PheonixSign signs in to the mailbox first and saves nothing if it is refused. The password is stored encrypted and never shown again.
 
 | Send from                        | What to do                                                                                                                                                                                                                                                                                       |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -92,31 +106,42 @@ In **Settings → Organization → Email setup**, choose how email is sent, fill
 | **Other email server**           | The SMTP server name and port from whoever runs your email (465 or 587 usually), and the mailbox's address and password. Outlook and Microsoft 365 no longer accept a password from apps like this one: use Resend for them.                                                                     |
 | **Resend, from your own domain** | In Vercel: **Storage → Create Storage → Resend**, free plan, empty prefix, then redeploy (step 4). In PheonixSign, enter an address at your domain under **Send email from**, and add the DNS records the page lists where your domain is managed.                                               |
 
-The test email should arrive within a minute. **Email is working** then shows in green.
+The test email should arrive within a minute (check spam the first time). **Email is working** then shows in green.
 
-### 7. Signers inside and outside your organization
+### 7. Make it yours
 
-You send to anyone with an email address. Under **Settings → Organization → Signers outside your organization**, **Ask people outside the organization for a code** is on by default:
+Still under **Settings → Organization**:
 
-- **Inside** means an address at your organization's own domain (the one people sign up with under **Who can create an account**), or an account on this site. Gmail, Yahoo and other public addresses never make someone inside, so a business that sends from Gmail counts only its own account holders.
+- **Logo and color**: upload your logo and pick your color. Signers see them on the signing pages and in every email.
+- **Who can create an account**: _People at my organization_ lets in colleagues with an address at your domain; _Nobody_ keeps it to the accounts there are. With a Gmail address there is no domain to share: to let a colleague in, choose _Anyone_, have them sign up at `/signup` on your site, then choose _Nobody_ again.
+- **Signers outside your organization**: see step 8.
+
+Then send your first document: **New envelope**, upload a PDF, add yourself as the signer, place a signature field, and send.
+
+### 8. Signers inside and outside your organization
+
+You send to anyone with an email address. **Ask people outside the organization for a code** is on by default:
+
+- **Inside** means an address at your organization's own domain (the one under **Who can create an account**), or an account on this site. Gmail, Yahoo and other public addresses never make someone inside, so a business that sends from Gmail counts only its own account holders.
 - **Everyone else** is emailed a one-time code when they open their link, and must enter it before they can see or sign the document.
 - For each signer, the sender can still ask for an emailed code, or an access code they pass on themselves, whoever the signer is.
 
-### 8. Changes and updates
+### 9. Changes and updates
 
-Every push to the `main` branch deploys again by itself.
+Every push to the `main` branch of `PheonixSign` deploys again by itself.
 
 ### If something goes wrong
 
-| What you see                                            | What to do                                                                                                                                                                                           |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel's `404: NOT_FOUND` page                          | **Settings → Build and Deployment**: Framework Preset **Next.js**, Root Directory empty. Redeploy.                                                                                                   |
-| **Connect a database**                                  | **Settings → Environment Variables** must list `DATABASE_URL` (or `INKSEAL_DATABASE_URL`). If it has another prefix, disconnect Neon in Storage and connect it again with an empty prefix. Redeploy. |
-| "One or more integration resources failed to provision" | A store was still being made. Wait a minute or two and redeploy.                                                                                                                                     |
-| Uploading a PDF fails                                   | Blob is missing or not connected: **Environment Variables** must list `BLOB_READ_WRITE_TOKEN` or `BLOB_STORE_ID`. Redeploy after connecting it.                                                      |
-| "did not accept that address and app password"          | Use an app password, not your normal password, and check 2-Step Verification is on. Make a new app password if in doubt.                                                                             |
-| **Enter the email password again**                      | The site's secret changed since the mailbox was saved. Enter its password again in Email setup.                                                                                                      |
-| A signer never gets the email                           | Send yourself a test email from Email setup, and check the signer's spam folder. Gmail and Yahoo limit how many emails go out a day.                                                                 |
+| What you see                                            | What to do                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel's `404: NOT_FOUND` page                          | **Settings → Build and Deployment**: Framework Preset **Next.js**, Root Directory empty. Redeploy.                                                                                                                                     |
+| **Connect a database**                                  | Neon is not connected, or the site was built before it was. Check **Storage**, then redeploy. **Environment Variables** should list a name ending in `DATABASE_URL`; if there are several databases' worth, disconnect the extra ones. |
+| "One or more integration resources failed to provision" | A store was still being made. Wait a minute or two and redeploy.                                                                                                                                                                       |
+| The setup page asks for a token you do not know         | It is the `SETUP_TOKEN` from step 4. Change it there and redeploy if you have lost it.                                                                                                                                                 |
+| Uploading a PDF fails                                   | Blob is missing or not connected: **Environment Variables** must list `BLOB_READ_WRITE_TOKEN` or `BLOB_STORE_ID`. Redeploy after connecting it.                                                                                        |
+| "did not accept that address and app password"          | Use an app password, not your normal password, and check 2-Step Verification is on. Make a new app password if in doubt.                                                                                                               |
+| **Enter the email password again**                      | `BETTER_AUTH_SECRET` or the database password changed since the mailbox was saved. Enter the email password again in Email setup.                                                                                                      |
+| A signer never gets the email                           | Send yourself a test email from Email setup, and check the signer's spam folder. Gmail and Yahoo limit how many emails go out a day.                                                                                                   |
 
 ## Why PheonixSign
 
@@ -292,6 +317,8 @@ DocuSign's figures are its US list prices for annual plans in November 2026: $30
 ## Get started
 
 ### Deploy to Vercel
+
+**Setting up your own copy of this repository?** Follow [Set it up on Vercel, step by step](#set-it-up-on-vercel-step-by-step) at the top of this page. The Deploy button below copies the repository into another GitHub account, which only works while the repository is public.
 
 1. **Click Deploy to Vercel** above, and sign in to Vercel. It copies PheonixSign into your GitHub account and builds your site from that copy.
 2. **Add the three things Vercel offers to create**, each on a free plan: [Resend](https://resend.com) for email, a [Neon](https://neon.com) Postgres database, and a private [Vercel Blob](https://vercel.com/docs/vercel-blob) store.

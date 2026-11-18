@@ -34,30 +34,62 @@ test("migrations prefer the direct URL that belongs to the URL in use", () => {
   assert.equal(resolveMigrationDatabaseUrl({}), null);
 });
 
-test("a database connected with the INKSEAL prefix is found", () => {
-  const env = {
-    INKSEAL_DATABASE_URL: "postgres://c",
-    INKSEAL_DATABASE_URL_UNPOOLED: "postgres://c-direct",
-    INKSEAL_POSTGRES_URL: "postgres://c-pooled",
-    INKSEAL_POSTGRES_URL_NON_POOLING: "postgres://c-direct-too",
-  };
+test("a database connected with a prefix is found, whatever the prefix", () => {
+  for (const prefix of ["INKSEAL", "PHEONIXSIGN", "STORAGE"]) {
+    const env = {
+      [`${prefix}_DATABASE_URL`]: "postgres://c",
+      [`${prefix}_DATABASE_URL_UNPOOLED`]: "postgres://c-direct",
+      [`${prefix}_POSTGRES_URL`]: "postgres://c-pooled",
+      [`${prefix}_POSTGRES_URL_NON_POOLING`]: "postgres://c-direct-too",
+      [`${prefix}_POSTGRES_PRISMA_URL`]: "postgres://not-this-one",
+    };
 
-  assert.deepEqual(resolveDatabaseUrl(env), {
-    name: "INKSEAL_DATABASE_URL",
-    value: "postgres://c",
+    assert.deepEqual(resolveDatabaseUrl(env), {
+      name: `${prefix}_DATABASE_URL`,
+      value: "postgres://c",
+    });
+    assert.deepEqual(resolveMigrationDatabaseUrl(env), {
+      name: `${prefix}_DATABASE_URL_UNPOOLED`,
+      value: "postgres://c-direct",
+    });
+    // Names without a prefix still come first.
+    assert.equal(
+      resolveDatabaseUrl({ ...env, DATABASE_URL: "postgres://a" })?.name,
+      "DATABASE_URL",
+    );
+  }
+
+  assert.deepEqual(resolveDatabaseUrl({ ACME_POSTGRES_URL: "postgres://d" }), {
+    name: "ACME_POSTGRES_URL",
+    value: "postgres://d",
   });
-  assert.deepEqual(resolveMigrationDatabaseUrl(env), {
-    name: "INKSEAL_DATABASE_URL_UNPOOLED",
-    value: "postgres://c-direct",
-  });
-  assert.deepEqual(
-    resolveDatabaseUrl({ INKSEAL_POSTGRES_URL: "postgres://d" }),
-    { name: "INKSEAL_POSTGRES_URL", value: "postgres://d" },
-  );
-  // Unprefixed names still come first.
+});
+
+test("with two prefixes, no database is guessed", () => {
   assert.equal(
-    resolveDatabaseUrl({ ...env, DATABASE_URL: "postgres://a" })?.name,
-    "DATABASE_URL",
+    resolveDatabaseUrl({
+      FIRST_DATABASE_URL: "postgres://one",
+      SECOND_DATABASE_URL: "postgres://two",
+    }),
+    null,
+  );
+});
+
+test("the test suite's and the backups' own settings are never taken for the app's database", () => {
+  assert.equal(
+    resolveDatabaseUrl({ E2E_DATABASE_URL: "postgres://tests" }),
+    null,
+  );
+  assert.deepEqual(
+    resolveDatabaseUrl({
+      E2E_DATABASE_URL: "postgres://tests",
+      PHEONIXSIGN_DATABASE_URL: "postgres://app",
+    }),
+    { name: "PHEONIXSIGN_DATABASE_URL", value: "postgres://app" },
+  );
+  assert.equal(
+    resolveDatabaseUrl({ INKSEAL_DATABASE_URL: "replace-with-a-url" }),
+    null,
   );
 });
 

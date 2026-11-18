@@ -38,7 +38,7 @@ const environmentBefore = new Map<string, string | undefined>();
 
 before(async () => {
   database = await openTestDatabase();
-  workDir = await mkdtemp(path.join(tmpdir(), "inkseal-outsiders-"));
+  workDir = await mkdtemp(path.join(tmpdir(), "pheonixsign-outsiders-"));
 
   for (const name of SETTINGS) {
     environmentBefore.set(name, process.env[name]);

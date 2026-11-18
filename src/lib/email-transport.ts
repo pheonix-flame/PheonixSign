@@ -27,7 +27,7 @@ import { type EnvSource } from "./utils/env.ts";
 // read: email stops until an administrator enters it again, and Settings
 // says so.
 
-const PASSWORD_KEY_CONTEXT = "inkseal/email-transport-password/v1";
+const PASSWORD_KEY_CONTEXT = "pheonixsign/email-transport-password/v1";
 
 /** Other instances pick up a change within this time. */
 const CACHE_MS = 30_000;
@@ -64,11 +64,11 @@ type TransportCache = {
 };
 
 declare global {
-  var __inksealEmailTransportCache: TransportCache | undefined;
+  var __pheonixsignEmailTransportCache: TransportCache | undefined;
 }
 
 export function invalidateEmailTransportCache(): void {
-  globalThis.__inksealEmailTransportCache = undefined;
+  globalThis.__pheonixsignEmailTransportCache = undefined;
 }
 
 function passwordKey(env: EnvSource): Buffer {
@@ -151,7 +151,7 @@ export async function loadEmailTransport(
   env: EnvSource = process.env,
   database?: DbExecutor,
 ): Promise<LoadedEmailTransport | null> {
-  const cached = globalThis.__inksealEmailTransportCache;
+  const cached = globalThis.__pheonixsignEmailTransportCache;
 
   if (!database && cached && cached.expiresAt > Date.now()) {
     return cached.value;
@@ -187,7 +187,7 @@ export async function loadEmailTransport(
   const value = row ? rowToTransport(row, env) : null;
 
   if (!database) {
-    globalThis.__inksealEmailTransportCache = {
+    globalThis.__pheonixsignEmailTransportCache = {
       expiresAt: Date.now() + CACHE_MS,
       value,
     };

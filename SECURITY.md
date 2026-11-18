@@ -4,7 +4,7 @@
 
 If you find a security vulnerability in PheonixSign, please report it privately. **Do not put the details in a public GitHub issue, discussion or pull request.**
 
-Send your report through GitHub's private vulnerability reporting: open the [Report a vulnerability](https://github.com/pheonix-flame/inkseal/security/advisories/new) form, which is also on this repository's security advisories page. The report stays between you and the repository's maintainers. Include:
+Send your report through GitHub's private vulnerability reporting: open the [Report a vulnerability](https://github.com/pheonix-flame/PheonixSign/security/advisories/new) form, which is also on this repository's security advisories page. The report stays between you and the repository's maintainers. Include:
 
 - A description of the vulnerability.
 - Steps to reproduce or a proof of concept.
@@ -40,7 +40,7 @@ Security fixes are applied to the latest release only.
 
 - **Static analysis.** GitHub CodeQL (the `security-extended` queries) runs on every pull request, on `main` and weekly, over the TypeScript and over the GitHub Actions workflows. See `.github/workflows/codeql.yml`.
 - **Dependencies.** Every pull request runs GitHub's dependency review, which fails on a new dependency with a known high or critical vulnerability, or under a license this project does not take (GPL, AGPL, SSPL). `npm audit` checks what the app ships every week and on `main`. See `.github/workflows/dependency-audit.yml`.
-- **Repository practices.** OpenSSF Scorecard scores the repository weekly; the result is at [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/pheonix-flame/inkseal).
+- **Repository practices.** OpenSSF Scorecard scores the repository weekly; the result is at [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/pheonix-flame/PheonixSign).
 - **Tests.** Typecheck, lint, unit tests, tests against a real Postgres and an end-to-end browser test run on every pull request (`.github/workflows/ci.yml`).
 
 ## Verifying a release
@@ -54,7 +54,7 @@ Each release from v0.3.0 on has these files attached, made by `.github/workflows
 Each file has a GitHub artifact attestation, signed through Sigstore, saying which workflow run in this repository made it from which commit. To check one with the GitHub CLI:
 
 ```sh
-gh attestation verify signudoc-<version>.tar.gz -R pheonix-flame/inkseal
+gh attestation verify signudoc-<version>.tar.gz -R pheonix-flame/PheonixSign
 ```
 
 ## Recognition

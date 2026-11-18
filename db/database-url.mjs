@@ -12,19 +12,64 @@
  *   the Vercel Marketplace.
  * - POSTGRES_URL / POSTGRES_URL_NON_POOLING: set by Supabase through the
  *   Vercel Marketplace.
- * - The same names starting with INKSEAL_: what Vercel sets when the
- *   database is connected to the project with "INKSEAL" as its prefix.
+ * - The same names after a prefix, such as PHEONIXSIGN_DATABASE_URL: what
+ *   Vercel sets when the database is connected to the project with a
+ *   custom prefix. Used only when there are none without a prefix, and
+ *   only when exactly one prefix has them: with two, which database is
+ *   meant cannot be told, and none is picked.
  */
 const DATABASE_URL_PAIRS = [
   ["DATABASE_URL", "DATABASE_URL_UNPOOLED"],
   ["POSTGRES_URL", "POSTGRES_URL_NON_POOLING"],
-  ["INKSEAL_DATABASE_URL", "INKSEAL_DATABASE_URL_UNPOOLED"],
-  ["INKSEAL_POSTGRES_URL", "INKSEAL_POSTGRES_URL_NON_POOLING"],
 ];
 
-export const DATABASE_URL_VARIABLES = DATABASE_URL_PAIRS.map(
-  ([runtimeName]) => runtimeName,
-);
+/** For the message when no database is found. */
+export const DATABASE_URL_VARIABLES = [
+  ...DATABASE_URL_PAIRS.map(([runtimeName]) => runtimeName),
+  "either with a prefix, such as PHEONIXSIGN_DATABASE_URL",
+];
+
+// A prefix in front of DATABASE_URL or POSTGRES_URL, as Vercel adds one.
+const PREFIXED_URL = /^([A-Z][A-Z0-9_]*?)_(DATABASE_URL|POSTGRES_URL)$/;
+
+// Prefixes that name something else: the test suite's own database, and
+// the second Blob store for backups.
+const IGNORED_PREFIXES = new Set(["BACKUP", "E2E", "TEST"]);
+
+/**
+ * The pairs to look at, in order: the plain names, then the names after
+ * the one prefix the environment uses, if it uses exactly one.
+ *
+ * @param {Readonly<Record<string, string | undefined>>} env
+ * @returns {string[][]}
+ */
+function candidatePairs(env) {
+  const prefixes = new Set();
+
+  for (const name of Object.keys(env)) {
+    const match = PREFIXED_URL.exec(name);
+
+    if (
+      match &&
+      !IGNORED_PREFIXES.has(match[1]) &&
+      readConfiguredValue(env, name)
+    ) {
+      prefixes.add(match[1]);
+    }
+  }
+
+  if (prefixes.size !== 1) {
+    return DATABASE_URL_PAIRS;
+  }
+
+  const [prefix] = prefixes;
+
+  return [
+    ...DATABASE_URL_PAIRS,
+    [`${prefix}_DATABASE_URL`, `${prefix}_DATABASE_URL_UNPOOLED`],
+    [`${prefix}_POSTGRES_URL`, `${prefix}_POSTGRES_URL_NON_POOLING`],
+  ];
+}
 
 /**
  * @param {Readonly<Record<string, string | undefined>>} env
@@ -48,7 +93,7 @@ function readConfiguredValue(env, name) {
  * @returns {{ name: string, value: string } | null}
  */
 export function resolveDatabaseUrl(env = process.env) {
-  for (const [runtimeName] of DATABASE_URL_PAIRS) {
+  for (const [runtimeName] of candidatePairs(env)) {
     const value = readConfiguredValue(env, runtimeName);
 
     if (value) {
@@ -68,7 +113,7 @@ export function resolveDatabaseUrl(env = process.env) {
  * @returns {{ name: string, value: string } | null}
  */
 export function resolveMigrationDatabaseUrl(env = process.env) {
-  for (const [runtimeName, directName] of DATABASE_URL_PAIRS) {
+  for (const [runtimeName, directName] of candidatePairs(env)) {
     const runtimeValue = readConfiguredValue(env, runtimeName);
 
     if (!runtimeValue) {

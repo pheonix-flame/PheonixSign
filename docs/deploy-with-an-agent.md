@@ -25,7 +25,7 @@ The person you are working for is called "the person" below.
 Open this address (it is the "Deploy to Vercel" button in the [README](../README.md)):
 
 ```
-https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2Finkseal&project-name=pheonixsign&repository-name=pheonixsign&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D
+https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2FPheonixSign&project-name=pheonixsign&repository-name=PheonixSign&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D
 ```
 
 ## 2. Create the copy on GitHub
