@@ -1,0 +1,396 @@
+# Keeps a copy of SignuDoc up to date with the project's releases.
+#
+# The Vercel Deploy button copies SignuDoc into a repository of your own,
+# and Vercel deploys every push to it. This workflow, run in that copy,
+# brings in the latest SignuDoc release and opens a pull request with it.
+# Vercel builds a preview of the pull request; merging it deploys the new
+# version, and the production build applies any database changes.
+#
+# It runs every Monday and whenever you press "Run workflow" on the
+# Actions tab. Your own changes to the code are kept: the release is merged
+# with them, and when both changed the same lines the run stops and lists
+# the files instead of opening a pull request.
+#
+# It needs no setup, with two optional extras (docs/self-hosting.md, "Keep
+# your install up to date"):
+#   - So it can open the pull request itself: Settings, Actions, General,
+#     "Allow GitHub Actions to create and approve pull requests". Without
+#     it the run pushes the branch and links to the page that opens one.
+#   - A SIGNUDOC_UPDATE_TOKEN secret (a fine-grained token for this one
+#     repository with Contents, Pull requests and Workflows read and
+#     write). GitHub does not let a workflow's own token change files in
+#     .github/workflows, so without it those files stay as they are and
+#     the pull request says which ones differ from the release.
+#
+# Set the repository variable SIGNUDOC_AUTO_MERGE to 1 to have the weekly
+# run merge an update that applies cleanly straight into your production
+# branch instead of opening a pull request.
+#
+# If Vercel deploys from a branch other than the default branch, set the
+# repository variable SIGNUDOC_PRODUCTION_BRANCH to it.
+#
+# In the SignuDoc repository itself the job is skipped.
+
+name: Update SignuDoc
+
+on:
+  schedule:
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release to update to, such as v0.2.0. Leave empty for the latest."
+        required: false
+        default: ""
+      based_on:
+        description: "Only when a run asks for it: the SignuDoc release or commit this copy started from, such as v0.1.0."
+        required: false
+        default: ""
+      merge:
+        description: "Merge straight into the production branch instead of opening a pull request (only when nothing clashes)."
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-signudoc
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Bring in the latest release
+    # Expressions compare strings without regard to case.
+    if: github.repository != 'NYLLON-SOFTWARE/SignuDoc'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UPSTREAM: NYLLON-SOFTWARE/SignuDoc
+      UPSTREAM_GIT_URL: https://github.com/NYLLON-SOFTWARE/SignuDoc.git
+      GH_TOKEN: ${{ secrets.SIGNUDOC_UPDATE_TOKEN || github.token }}
+      HAS_UPDATE_TOKEN: ${{ secrets.SIGNUDOC_UPDATE_TOKEN != '' }}
+      REQUESTED_VERSION: ${{ inputs.version }}
+      BASED_ON: ${{ inputs.based_on }}
+      MERGE_NOW: ${{ inputs.merge == true || vars.SIGNUDOC_AUTO_MERGE == '1' }}
+      # The branch Vercel deploys to production. Set the repository
+      # variable SIGNUDOC_PRODUCTION_BRANCH if it is not the default branch.
+      BASE_BRANCH: ${{ vars.SIGNUDOC_PRODUCTION_BRANCH || github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ vars.SIGNUDOC_PRODUCTION_BRANCH || github.event.repository.default_branch }}
+          token: ${{ secrets.SIGNUDOC_UPDATE_TOKEN || github.token }}
+
+      - name: Merge the release into a branch
+        id: merge
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          summary() { printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; }
+          stop() { echo "::error::$1"; summary "**$1**"; exit 1; }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Which release.
+          if [ -n "${REQUESTED_VERSION:-}" ]; then
+            tag="$REQUESTED_VERSION"
+            case "$tag" in v*) ;; *) tag="v$tag" ;; esac
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+              stop "\"$REQUESTED_VERSION\" is not a release version such as v0.2.0."
+            fi
+            release_json=$(gh api "repos/$UPSTREAM/releases/tags/$tag") ||
+              stop "SignuDoc has no release $tag."
+          else
+            release_json=$(gh api "repos/$UPSTREAM/releases/latest") ||
+              stop "The latest SignuDoc release could not be read from GitHub."
+          fi
+          tag=$(jq -r '.tag_name' <<< "$release_json")
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            stop "The release tag \"$tag\" is not a version number."
+          fi
+          release_url=$(jq -r '.html_url' <<< "$release_json")
+          jq -r '.body // ""' <<< "$release_json" > "$RUNNER_TEMP/notes-full.md"
+          head -c 40000 "$RUNNER_TEMP/notes-full.md" > "$RUNNER_TEMP/notes.md"
+
+          # The project's history, kept apart from this repository's own
+          # branches and tags.
+          git fetch --quiet --no-tags "$UPSTREAM_GIT_URL" \
+            "+refs/heads/main:refs/signudoc/main" \
+            "+refs/tags/*:refs/signudoc/tags/*"
+          target=$(git rev-parse --verify "refs/signudoc/tags/$tag^{commit}") ||
+            stop "Release $tag has no matching tag in $UPSTREAM."
+
+          # Which SignuDoc commit this copy last took. The newest of:
+          #  - the commit named by an earlier run of this workflow,
+          #  - a commit both histories share (a fork, or a manual merge),
+          #  - the commit the Deploy button copied, found by its files.
+          candidates=()
+          if [ -n "${BASED_ON:-}" ]; then
+            [[ "$BASED_ON" =~ ^[0-9A-Za-z._-]{1,100}$ ]] ||
+              stop "\"$BASED_ON\" is not a SignuDoc release or commit."
+            based_on="$BASED_ON"
+            if [[ "$based_on" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then based_on="v$based_on"; fi
+            base=$(git rev-parse -q --verify "refs/signudoc/tags/$based_on^{commit}" ||
+              git rev-parse -q --verify "$based_on^{commit}") ||
+              stop "SignuDoc has no release or commit \"$BASED_ON\"."
+            git merge-base --is-ancestor "$base" refs/signudoc/main ||
+              git merge-base --is-ancestor "$base" "$target" ||
+              stop "\"$BASED_ON\" is not a SignuDoc release or commit."
+            candidates+=("$base")
+          fi
+          if [ -z "${BASED_ON:-}" ]; then
+            while read -r sha; do
+              if git cat-file -e "$sha^{commit}" 2> /dev/null; then candidates+=("$sha"); fi
+            done < <(git log --max-count=200 --format=%B HEAD |
+              sed -n 's/^SignuDoc-Commit: \([0-9a-f]\{40\}\)[[:space:]]*$/\1/p')
+          fi
+          if [ -z "${BASED_ON:-}" ] && shared=$(git merge-base HEAD "$target" 2> /dev/null); then
+            candidates+=("$shared")
+          fi
+          if [ "${#candidates[@]}" -eq 0 ]; then
+            mapfile -t roots < <(git rev-list --max-parents=0 HEAD)
+            [ "${#roots[@]}" -eq 1 ] ||
+              stop "This repository's history has ${#roots[@]} starting points, so the SignuDoc version it came from cannot be found. Update by hand (docs/self-hosting.md)."
+            root_tree=$(git rev-parse "${roots[0]}^{tree}")
+            copied=$(git log --format='%H %T' refs/signudoc/main "$target" |
+              awk -v tree="$root_tree" '$2 == tree { print $1; exit }' || true)
+            if [ -z "$copied" ]; then
+              # The first commit was changed before it was pushed. Take the
+              # SignuDoc commit with the fewest differing lines, and only
+              # when exactly one commit is that close.
+              fewest=""
+              tied=0
+              while read -r sha; do
+                count=$(git diff --no-renames --numstat "${roots[0]}" "$sha" |
+                  awk '{ total += ($1 == "-" ? 1 : $1 + $2) } END { print total + 0 }')
+                if [ -z "$fewest" ] || [ "$count" -lt "$fewest" ]; then
+                  copied="$sha"
+                  fewest="$count"
+                  tied=0
+                elif [ "$count" -eq "$fewest" ]; then
+                  tied=1
+                fi
+              done < <(git rev-list --max-count=500 refs/signudoc/main "$target")
+              if [ "$tied" -eq 1 ]; then
+                stop "Your first commit matches no SignuDoc commit exactly, and several are equally close. Run this workflow again with \"based on\" set to the SignuDoc release you deployed, such as v0.1.0."
+              fi
+              summary "Your first commit matches no SignuDoc commit exactly. Using the closest one, ${copied:0:7}, which differs in $fewest lines. If that is not the version you deployed, run again with \"based on\" set to it."
+            fi
+            candidates+=("$copied")
+          fi
+          base="${candidates[0]}"
+          for sha in "${candidates[@]}"; do
+            if git merge-base --is-ancestor "$base" "$sha"; then base="$sha"; fi
+          done
+
+          # Without the token, a run leaves workflow files as they were and
+          # records how far they lag in SignuDoc-Workflows-Commit, so a later
+          # run with the token can still bring them in.
+          wf_base="$base"
+          latest_update=$(git log -1 --format=%H --grep='^SignuDoc-Commit: ' HEAD)
+          if [ -z "${BASED_ON:-}" ] && [ -n "$latest_update" ]; then
+            message=$(git log -1 --format=%B "$latest_update")
+            recorded=$(sed -n 's/^SignuDoc-Commit: \([0-9a-f]\{40\}\)[[:space:]]*$/\1/p' <<< "$message" | head -n 1)
+            recorded_wf=$(sed -n 's/^SignuDoc-Workflows-Commit: \([0-9a-f]\{40\}\)[[:space:]]*$/\1/p' <<< "$message" | head -n 1)
+            if [ "$recorded" = "$base" ] && [ -n "$recorded_wf" ] &&
+              git cat-file -e "$recorded_wf^{commit}" 2> /dev/null; then
+              wf_base="$recorded_wf"
+            fi
+          fi
+
+          needs_code=true
+          git merge-base --is-ancestor "$target" "$base" && needs_code=false
+          needs_workflows=false
+          if [ "$HAS_UPDATE_TOKEN" = "true" ] && ! git merge-base --is-ancestor "$target" "$wf_base"; then
+            needs_workflows=true
+          fi
+
+          if [ "$needs_code" = "false" ] && [ "$needs_workflows" = "false" ]; then
+            summary "Already up to date with SignuDoc $tag."
+            if ! git merge-base --is-ancestor "$target" "$wf_base"; then
+              summary "" "Files in \`.github/workflows\` were left as they were by an earlier update. Add a \`SIGNUDOC_UPDATE_TOKEN\` secret (docs/self-hosting.md) and run this again to bring them in."
+            fi
+            echo "Already up to date with SignuDoc $tag."
+            exit 0
+          fi
+
+          branch="signudoc-update/$tag"
+          if [ "$needs_code" = "false" ]; then branch="signudoc-update/$tag-workflows"; fi
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            open_pr=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // ""')
+            if [ -n "$open_pr" ]; then
+              summary "SignuDoc $tag is waiting in $open_pr."
+            else
+              summary "The branch $branch already exists. Open a pull request from it ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE_BRANCH...$branch?expand=1), or delete it and run this again."
+            fi
+            exit 0
+          fi
+
+          # Three-way merge: what SignuDoc changed since $base, applied on
+          # top of this repository, keeping this repository's own changes.
+          merged_tree=$(git rev-parse "HEAD^{tree}")
+          if [ "$needs_code" = "true" ]; then
+            set +e
+            merge_output=$(git merge-tree --write-tree --name-only --no-messages \
+              --merge-base="$base" HEAD "$target")
+            merge_status=$?
+            set -e
+            clashes=$(tail -n +2 <<< "$merge_output" | sed '/^$/d')
+            # Workflow files are settled separately below when they are
+            # kept as they are (no token) or merged from where an earlier
+            # run left them, so a clash there does not stop the update.
+            if [ "$HAS_UPDATE_TOKEN" != "true" ] || [ "$wf_base" != "$base" ]; then
+              clashes=$(grep -v '^\.github/workflows/' <<< "$clashes" || true)
+            fi
+            if [ "$merge_status" -eq 1 ] && [ -n "$clashes" ]; then
+              summary "## SignuDoc $tag clashes with changes in this repository" "" \
+                "These files were changed both here and in SignuDoc, in the same places:" ""
+              sed 's/^/- `/; s/$/`/' <<< "$clashes" >> "$GITHUB_STEP_SUMMARY"
+              summary "" "To update by hand, see \"Keep your install up to date\" in docs/self-hosting.md. Use \`${base}\` as the SignuDoc commit this repository is based on."
+              stop "SignuDoc $tag clashes with this repository's own changes. See the run summary."
+            elif [ "$merge_status" -gt 1 ]; then
+              stop "git could not merge SignuDoc $tag."
+            fi
+            merged_tree=$(head -n 1 <<< "$merge_output")
+          fi
+
+          git checkout --quiet -b "$branch"
+          git read-tree -u --reset "$merged_tree"
+
+          # GitHub refuses a push that changes workflow files unless the
+          # token may change workflows, which a workflow's own token may not.
+          new_wf_base="$target"
+          if [ "$HAS_UPDATE_TOKEN" != "true" ]; then
+            # Behind only if SignuDoc changed them since they were last taken.
+            if ! git diff --quiet "$wf_base" "$target" -- .github/workflows; then
+              new_wf_base="$wf_base"
+            fi
+            while IFS=$'\t' read -r change path; do
+              [ -n "$path" ] || continue
+              if [ "$change" = "A" ]; then
+                git rm --quiet --force -- "$path"
+              else
+                git checkout HEAD -- "$path"
+              fi
+            done < <(git diff --cached --no-renames --name-status HEAD -- .github/workflows)
+          elif [ "$wf_base" != "$base" ]; then
+            # An earlier run left the workflow files behind: merge them from
+            # where they were left, and only them.
+            set +e
+            wf_output=$(git merge-tree --write-tree --name-only --no-messages \
+              --merge-base="$wf_base" HEAD "$target")
+            wf_status=$?
+            set -e
+            [ "$wf_status" -le 1 ] || stop "git could not merge the workflow files of SignuDoc $tag."
+            wf_clashes=$(tail -n +2 <<< "$wf_output" | grep '^\.github/workflows/' || true)
+            if [ -n "$wf_clashes" ]; then
+              summary "## Workflow files in SignuDoc $tag clash with changes in this repository" ""
+              sed 's/^/- `/; s/$/`/' <<< "$wf_clashes" >> "$GITHUB_STEP_SUMMARY"
+              stop "Workflow files in SignuDoc $tag clash with this repository's own changes. See the run summary."
+            fi
+            wf_tree=$(head -n 1 <<< "$wf_output")
+            git rm -r --quiet --force --ignore-unmatch -- .github/workflows
+            if git cat-file -e "$wf_tree:.github/workflows" 2> /dev/null; then
+              git checkout "$wf_tree" -- .github/workflows
+            fi
+          fi
+
+          if git diff --cached --quiet HEAD; then
+            summary "Nothing to change: this repository already has everything in SignuDoc $tag."
+            exit 0
+          fi
+
+          kept_workflows=""
+          if [ "$HAS_UPDATE_TOKEN" != "true" ]; then
+            kept_workflows=$(git diff --no-renames --name-only "$target" -- .github/workflows)
+          fi
+          new_base="$target"
+          [ "$needs_code" = "true" ] || new_base="$base"
+          new_migrations=$(git diff --cached --no-renames --name-only --diff-filter=A HEAD -- db/migrations)
+
+          git commit --quiet --file - << MESSAGE
+          Update SignuDoc to $tag
+
+          Brings in SignuDoc $tag ($release_url).
+
+          SignuDoc-Version: $tag
+          SignuDoc-Commit: $new_base
+          SignuDoc-Workflows-Commit: $new_wf_base
+          MESSAGE
+
+          {
+            echo "SignuDoc **$tag** is ready to deploy. [Release notes]($release_url)."
+            echo
+            echo "Merging this pull request deploys it. Vercel has built a preview from this branch; check it below before merging."
+            if [ -n "$new_migrations" ]; then
+              echo
+              echo "### Database changes"
+              echo
+              echo "This version changes the database. The production build applies the change when you merge:"
+              echo
+              sed 's/^/- `/; s/$/`/' <<< "$new_migrations"
+              echo
+              echo "Preview builds leave the database alone, so pages that need the change may fail in the preview. Once applied, a database change stays if you roll the site back."
+            fi
+            if [ -n "$kept_workflows" ]; then
+              echo
+              echo "### Workflow files not updated"
+              echo
+              echo "GitHub does not let this workflow change files in \`.github/workflows\`, so these still differ from SignuDoc $tag. Copy them from the release by hand, or add a \`SIGNUDOC_UPDATE_TOKEN\` secret (docs/self-hosting.md) and run the update again:"
+              echo
+              sed 's/^/- `/; s/$/`/' <<< "$kept_workflows"
+            fi
+            echo
+            echo "### What's new in $tag"
+            echo
+            cat "$RUNNER_TEMP/notes.md"
+            echo
+            echo "---"
+            echo
+            echo "Opened by the Update SignuDoc workflow."
+            echo
+            echo "SignuDoc-Version: $tag"
+            echo "SignuDoc-Commit: $new_base"
+            echo "SignuDoc-Workflows-Commit: $new_wf_base"
+          } > "$RUNNER_TEMP/pr-body.md"
+
+          {
+            echo "branch=$branch"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Deploy or open a pull request
+        if: steps.merge.outputs.branch != ''
+        shell: bash
+        env:
+          BRANCH: ${{ steps.merge.outputs.branch }}
+          TAG: ${{ steps.merge.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          summary() { printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; }
+
+          if [ "$MERGE_NOW" = "true" ]; then
+            # The branch was made from the production branch's tip, so this
+            # is a fast-forward unless someone pushed in the meantime.
+            git push origin "HEAD:refs/heads/$BASE_BRANCH"
+            summary "SignuDoc $TAG was merged into \`$BASE_BRANCH\`. Vercel is deploying it."
+            exit 0
+          fi
+
+          git push --quiet origin "HEAD:refs/heads/$BRANCH"
+          if url=$(gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
+            --title "Update SignuDoc to $TAG" --body-file "$RUNNER_TEMP/pr-body.md"); then
+            summary "Opened $url. Merge it to deploy SignuDoc $TAG."
+          else
+            compare="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE_BRANCH...$BRANCH?expand=1"
+            summary "The branch \`$BRANCH\` has SignuDoc $TAG, but this workflow may not open pull requests here." "" \
+              "Open one yourself: $compare" "" \
+              "To let the workflow do it next time: Settings, Actions, General, \"Allow GitHub Actions to create and approve pull requests\"."
+            echo "::warning::Open the pull request yourself: $compare"
+          fi
