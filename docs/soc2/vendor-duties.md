@@ -1,6 +1,6 @@
 # Vendor duties
 
-A InkSeal install on Vercel runs on the services below. For your SOC 2 audit they are subservice organizations: your auditor usually carves them out, which means you collect each one's SOC 2 report, check its opinion and exceptions, and show that you do the complementary user entity controls (CUECs) the report says customers must do.
+A PheonixSign install on Vercel runs on the services below. For your SOC 2 audit they are subservice organizations: your auditor usually carves them out, which means you collect each one's SOC 2 report, check its opinion and exceptions, and show that you do the complementary user entity controls (CUECs) the report says customers must do.
 
 What each vendor offers, and which plan includes its report, was checked on 2026-11-16. It changes; check again before an audit.
 
@@ -24,7 +24,7 @@ What each vendor offers, and which plan includes its report, was checked on 2026
 - **Report:** SOC 2 Type 2, through trust.neon.com. Neon's pricing page lists SOC 2 among the features of its Scale plan; check which plan your report access and the controls you need come with.
 - **CUECs you will typically need to show:**
   - Console and project access limited and reviewed. Someone with full database access can change rows, including rewriting an audit chain consistently, so this matters more than usual.
-  - A restore window that meets your recovery point objective (short on the free plan, longer on paid plans), and InkSeal's own daily backup on top.
+  - A restore window that meets your recovery point objective (short on the free plan, longer on paid plans), and PheonixSign's own daily backup on top.
   - The region chosen for your data residency needs.
 
 ### Resend (email, through the Vercel Marketplace)
@@ -48,9 +48,9 @@ Only if you turn them on. Each is outside Vercel and set up by you.
 | A certificate authority and timestamp server    | `SEAL_P12_BASE64`, `SEAL_TIMESTAMP_URL` | Their certificate policy and, for a qualified seal, their place on the EU trusted list.                |
 | A second Vercel team for backups                | `BACKUP_BLOB_READ_WRITE_TOKEN`          | Covered by Vercel's report. Record who has access to that team; keep it smaller than the main team.    |
 
-## The InkSeal project
+## The PheonixSign project
 
-InkSeal is open-source software, provided as is under its license, with no supplier agreement, support commitment or SOC 2 report of its own. It never receives your data: there is no InkSeal service between your install and your vendors. For your audit, treat it like any other open-source component you build from:
+PheonixSign is open-source software, provided as is under its license, with no supplier agreement, support commitment or SOC 2 report of its own. It never receives your data: there is no PheonixSign service between your install and your vendors. For your audit, treat it like any other open-source component you build from:
 
 - You choose when to take a release, and review it (the update workflow opens a pull request with the changelog).
 - Each release from v0.3.0 has an SBOM and signed build provenance you can verify ([SECURITY.md](../../SECURITY.md#verifying-a-release)).

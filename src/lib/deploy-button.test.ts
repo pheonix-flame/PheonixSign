@@ -29,8 +29,8 @@ test("the button copies this repository and pre-fills its name", () => {
     link.searchParams.get("repository-url"),
     "https://github.com/pheonix-flame/inkseal",
   );
-  assert.equal(link.searchParams.get("project-name"), "inkseal");
-  assert.equal(link.searchParams.get("repository-name"), "inkseal");
+  assert.equal(link.searchParams.get("project-name"), "pheonixsign");
+  assert.equal(link.searchParams.get("repository-name"), "pheonixsign");
 });
 
 test("the button creates the database, the private file store and email", () => {

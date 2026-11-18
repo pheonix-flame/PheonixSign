@@ -1,19 +1,19 @@
-# Deploying InkSeal with an agent
+# Deploying PheonixSign with an agent
 
-This page is for an AI agent that controls a web browser and has been asked to deploy InkSeal for someone. It lists every step, what to choose, what to ask the person, and how to retry when a step fails. A person can follow it too. The [self-hosting guide](self-hosting.md) explains each step in more depth.
+This page is for an AI agent that controls a web browser and has been asked to deploy PheonixSign for someone. It lists every step, what to choose, what to ask the person, and how to retry when a step fails. A person can follow it too. The [self-hosting guide](self-hosting.md) explains each step in more depth.
 
 The person you are working for is called "the person" below.
 
 ## Before you start
 
-- The browser should already be signed in to the person's **Vercel** account and to the **GitHub** account Vercel will copy InkSeal into. If a sign-in page appears, stop and ask the person to sign in. Never type a password, a one-time code or a passkey prompt for them unless they give you that job.
-- **Which Vercel plan.** Vercel's free Hobby plan is only for [personal, non-commercial use](https://vercel.com/docs/limits/fair-use-guidelines). Before you start, ask the person whether InkSeal is for a company or other organization's work, or only for their own personal use.
+- The browser should already be signed in to the person's **Vercel** account and to the **GitHub** account Vercel will copy PheonixSign into. If a sign-in page appears, stop and ask the person to sign in. Never type a password, a one-time code or a passkey prompt for them unless they give you that job.
+- **Which Vercel plan.** Vercel's free Hobby plan is only for [personal, non-commercial use](https://vercel.com/docs/limits/fair-use-guidelines). Before you start, ask the person whether PheonixSign is for a company or other organization's work, or only for their own personal use.
   - **Personal, non-commercial use:** the Hobby plan is fine.
   - **An organization's work:** the Vercel account or team you deploy into belongs on **Vercel Pro**, $20 a month at the time of writing (see [What it costs](self-hosting.md#what-it-costs)). If it is not on Pro yet, tell the person and let them upgrade or approve the upgrade themselves. Never pay or upgrade without their say-so. If they decline, stop.
 - Neon, Resend and Vercel Blob: pick the **free plan** for each, whichever Vercel plan the person uses. If any other screen asks for a card, a paid plan or an upgrade, stop and ask the person.
 - Ask the person for these before you begin, so you are not stopped half way:
   1. **Whether this is for an organization's work or for personal use**, to pick the Vercel plan (above).
-  2. **The domain email should come from**, for example `acme.com`. InkSeal suggests a `sign.` subdomain (`sign.acme.com`) so its email stays apart from the organization's own. If they have no domain yet, email can wait: leave Resend's domain question at its default.
+  2. **The domain email should come from**, for example `acme.com`. PheonixSign suggests a `sign.` subdomain (`sign.acme.com`) so its email stays apart from the organization's own. If they have no domain yet, email can wait: leave Resend's domain question at its default.
   3. **The organization's name**, as signers should see it.
   4. **The support email address** signers and staff should write to for help.
   5. **The administrator's name and email address.** The person creates the password themselves at step 6, or tells you to use their password manager.
@@ -25,12 +25,12 @@ The person you are working for is called "the person" below.
 Open this address (it is the "Deploy to Vercel" button in the [README](../README.md)):
 
 ```
-https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2Finkseal&project-name=inkseal&repository-name=inkseal&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D
+https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpheonix-flame%2Finkseal&project-name=pheonixsign&repository-name=pheonixsign&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22resend%22%2C%22productSlug%22%3A%22resend-email%22%2C%22protocol%22%3A%22messaging%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D
 ```
 
 ## 2. Create the copy on GitHub
 
-Vercel asks where to put the copy of InkSeal. Choose the person's GitHub account (or the organization they name), keep the name `signudoc` unless it is taken, and create it. A private repository is fine. If Vercel asks to install or authorize its GitHub app, that is expected; if GitHub asks the person to confirm with a passkey or code, hand over to them.
+Vercel asks where to put the copy of PheonixSign. Choose the person's GitHub account (or the organization they name), keep the name `signudoc` unless it is taken, and create it. A private repository is fine. If Vercel asks to install or authorize its GitHub app, that is expected; if GitHub asks the person to confirm with a passkey or code, hand over to them.
 
 ## 3. Add the three stores, in the order shown
 
@@ -78,7 +78,7 @@ Open **Settings, Organization** and find the email section.
 - **DNS records listed, not yet verified.** The domain's records are not in place yet. If the domain is managed somewhere other than Vercel, give the person the list of records to add where their domain is managed. The page checks them again by itself. This can take from minutes to a few hours.
 - **Verified.** Email is ready.
 
-Once a sender address is saved, every email goes out from it, and Resend refuses to send from it until its domain is verified, even to the person's own address. To try InkSeal before that, the sender address must be empty: mail then goes out from Resend's test address, which delivers only to the email address of the Resend account, so the person can send a document to themselves.
+Once a sender address is saved, every email goes out from it, and Resend refuses to send from it until its domain is verified, even to the person's own address. To try PheonixSign before that, the sender address must be empty: mail then goes out from Resend's test address, which delivers only to the email address of the Resend account, so the person can send a document to themselves.
 
 ## 8. Report back
 

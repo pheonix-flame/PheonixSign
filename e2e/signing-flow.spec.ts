@@ -20,6 +20,27 @@ const LOGO_PNG = Buffer.from(
   "base64",
 );
 
+/**
+ * Gets past the emailed code a signer outside the organization is asked
+ * for: asks for it, reads it from the captured email, and enters it.
+ */
+async function passEmailedCode(signerPage: Page, signerEmail: string) {
+  await expect(
+    signerPage.getByRole("heading", { name: "Confirm it's you" }),
+  ).toBeVisible();
+  await signerPage.getByRole("button", { name: "Email me a code" }).click();
+
+  const codeEmail = await waitForEmail({
+    template: "signing_code",
+    to: signerEmail,
+  });
+  const code = /\b(\d{6})\b/.exec(codeEmail.text)?.[1] ?? "";
+
+  expect(code).not.toBe("");
+  await signerPage.getByLabel("Code from your email").fill(code);
+  await signerPage.getByRole("button", { name: "Continue" }).click();
+}
+
 function readAccentColor(page: Page): Promise<string> {
   return page.evaluate(() =>
     getComputedStyle(document.documentElement)
@@ -98,10 +119,14 @@ test("a new install is set up, a sender sends a PDF and a recipient signs it", a
     expect(earlySignup.status()).toBe(403);
     expect(await earlySignup.json()).toMatchObject({ code: "setup_required" });
 
-    await adminPage.getByLabel("Organization name").fill(ORGANIZATION_NAME);
-    await adminPage.getByLabel("Your name").fill("Ada Admin");
+    await adminPage
+      .getByLabel("Organization or your name")
+      .fill(ORGANIZATION_NAME);
+    await adminPage.getByLabel("Your name", { exact: true }).fill("Ada Admin");
     await adminPage.getByLabel("Your email").fill(adminEmail);
     await adminPage.getByLabel("Password").fill(PASSWORD);
+    // Email is chosen later, in Settings: this test captures it instead.
+    await adminPage.getByRole("radio", { name: /Decide later/ }).check();
 
     // Setup does not finish without an address people can write to for
     // help. Nothing stands in for it, the administrator's own included.
@@ -238,7 +263,7 @@ test("a new install is set up, a sender sends a PDF and a recipient signs it", a
       // The product's own link goes to its repository. There is no site
       // run by the project to send anyone to.
       await expect(
-        footer.getByRole("link", { name: "Powered by InkSeal" }),
+        footer.getByRole("link", { name: "Powered by PheonixSign" }),
       ).toHaveAttribute("href", "https://github.com/pheonix-flame/inkseal");
     }
 
@@ -281,7 +306,7 @@ test("a new install is set up, a sender sends a PDF and a recipient signs it", a
 
     // Emails carry the organization's name, not the product's.
     expect(verificationEmail.text).toContain(
-      `Sent by ${ORGANIZATION_NAME} using InkSeal.`,
+      `Sent by ${ORGANIZATION_NAME} using PheonixSign.`,
     );
 
     await page.goto(
@@ -1162,6 +1187,9 @@ test("a signer signs with a qualified signature in their own name, through the s
     });
 
     await signerPage.goto(extractLink(invitation.text, "/sign/"));
+    // Sign-up is open to anyone by now, so nobody counts as inside the
+    // organization, and every signer is asked for an emailed code.
+    await passEmailedCode(signerPage, signerEmail);
 
     const consent = signerPage.getByRole("dialog", { name: "Before you sign" });
 
@@ -1295,6 +1323,9 @@ test("a signer who declines is told the decline was recorded, not that the link 
     const signerPage = await signerContext.newPage();
 
     await signerPage.goto(extractLink(invitation.text, "/sign/"));
+    // Sign-up is open to anyone by now, so nobody counts as inside the
+    // organization, and every signer is asked for an emailed code.
+    await passEmailedCode(signerPage, signerEmail);
 
     const consent = signerPage.getByRole("dialog", { name: "Before you sign" });
 

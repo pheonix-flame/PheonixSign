@@ -1,6 +1,6 @@
 # Sample policies
 
-Short starting points for the policies a SOC 2 auditor asks to see, written for an organization that runs a InkSeal install. They are not legal advice and not complete policies for your whole organization: fold them into your own policy set, fill in each `[bracket]`, have them approved, and review them yearly.
+Short starting points for the policies a SOC 2 auditor asks to see, written for an organization that runs a PheonixSign install. They are not legal advice and not complete policies for your whole organization: fold them into your own policy set, fill in each `[bracket]`, have them approved, and review them yearly.
 
 | Policy                                              | Criteria          |
 | --------------------------------------------------- | ----------------- |

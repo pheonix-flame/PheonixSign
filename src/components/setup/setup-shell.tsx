@@ -14,6 +14,7 @@ import { FieldShell, ShellButton } from "@/components/shared/form-shell";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/cn";
+import { SMTP_PROVIDER_INFO, type SmtpProvider } from "@/lib/email-providers";
 import {
   buildSenderAddress,
   DEFAULT_SENDER_LOCAL_PART,
@@ -248,6 +249,20 @@ function describeSignupStart(email: string, hosted: boolean): string | null {
 
 type SenderErrors = Partial<Record<keyof SenderAddressParts, string>>;
 
+/**
+ * How a new install will send its email. A mailbox (Gmail, Yahoo...) is
+ * connected on the next screen, in Settings, where its password is checked;
+ * setup itself never handles a mailbox password.
+ */
+type EmailChoice = "mailbox" | "domain" | "later";
+
+const SETUP_MAILBOX_PROVIDERS: SmtpProvider[] = [
+  "gmail",
+  "yahoo",
+  "zoho",
+  "other",
+];
+
 function SetupForm({
   hosted,
   knownSupportAddress,
@@ -280,6 +295,12 @@ function SetupForm({
     integrationSender !== null,
   );
   const [senderErrors, setSenderErrors] = useState<SenderErrors>({});
+  // A domain the Resend integration already set up is the obvious choice;
+  // otherwise a mailbox is, being the only one that needs no domain.
+  const [emailChoice, setEmailChoice] = useState<EmailChoice>(
+    integrationSender ? "domain" : "mailbox",
+  );
+  const [mailboxProvider, setMailboxProvider] = useState<SmtpProvider>("gmail");
   const [errors, setErrors] = useState<SetupErrors>({});
   const [bannerMessage, setBannerMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -351,9 +372,10 @@ function SetupForm({
     setErrors({});
     setSenderErrors({});
 
-    const builtSender = asksForSender
-      ? buildSenderAddress(senderParts)
-      : { address: null, error: null };
+    const builtSender =
+      asksForSender && emailChoice === "domain"
+        ? buildSenderAddress(senderParts)
+        : { address: null, error: null };
 
     if (builtSender.error) {
       setSenderErrors({ [builtSender.error.field]: builtSender.error.message });
@@ -393,8 +415,17 @@ function SetupForm({
       }
 
       // A full page load, so the app starts again with the new session and
-      // the organization's name.
-      window.location.assign(payload?.redirectTo ?? "/dashboard");
+      // the organization's name. Someone who chose a mailbox lands on its
+      // form, with that mailbox picked.
+      const redirectTo = payload?.redirectTo ?? "/dashboard";
+
+      window.location.assign(
+        asksForSender &&
+          emailChoice === "mailbox" &&
+          redirectTo.startsWith("/settings")
+          ? `/settings?mailbox=${mailboxProvider}#email-setup`
+          : redirectTo,
+      );
     } catch {
       setBannerMessage(GENERIC_ERROR_MESSAGE);
       setIsSubmitting(false);
@@ -429,8 +460,8 @@ function SetupForm({
           autoComplete="organization"
           disabled={isSubmitting}
           error={errors.organizationName}
-          helper="Shown in the header and in every email this site sends."
-          label="Organization name"
+          helper="Your business, team or club. Just for yourself? Use your own name. Shown in the header and in every email this site sends."
+          label="Organization or your name"
           name="setup-organization-name"
           onChange={handleChange("organizationName")}
           placeholder="Acme Corp"
@@ -505,6 +536,24 @@ function SetupForm({
         ) : null}
 
         {asksForSender ? (
+          <EmailChoiceFields
+            choice={emailChoice}
+            disabled={isSubmitting}
+            mailboxProvider={mailboxProvider}
+            onChoice={(next) => {
+              setEmailChoice(next);
+              setErrors((current) => ({
+                ...current,
+                senderAddress: undefined,
+              }));
+              setSenderErrors({});
+              setBannerMessage(null);
+            }}
+            onMailboxProvider={setMailboxProvider}
+          />
+        ) : null}
+
+        {asksForSender && emailChoice === "domain" ? (
           <SenderFields
             disabled={isSubmitting}
             errors={senderErrors}
@@ -569,6 +618,105 @@ function SetupForm({
         </p>
       ) : null}
     </div>
+  );
+}
+
+const EMAIL_CHOICES: Array<{
+  description: string;
+  label: string;
+  value: EmailChoice;
+}> = [
+  {
+    description:
+      "Gmail, Yahoo or Zoho. Good for small businesses: no domain, no DNS records. You connect it on the next screen.",
+    label: "From our email account",
+    value: "mailbox",
+  },
+  {
+    description:
+      "Such as notifications@yourcompany.com, through Resend. Needs DNS records at your domain.",
+    label: "From an address at our own domain",
+    value: "domain",
+  },
+  {
+    description: "Choose later in Settings. Nothing can be emailed until then.",
+    label: "Decide later",
+    value: "later",
+  },
+];
+
+function EmailChoiceFields({
+  choice,
+  disabled,
+  mailboxProvider,
+  onChoice,
+  onMailboxProvider,
+}: {
+  choice: EmailChoice;
+  disabled: boolean;
+  mailboxProvider: SmtpProvider;
+  onChoice: (choice: EmailChoice) => void;
+  onMailboxProvider: (provider: SmtpProvider) => void;
+}) {
+  return (
+    <fieldset className="space-y-3">
+      <legend className="mb-1 text-sm font-bold text-(--fg)">
+        How should this site send email?
+      </legend>
+      <p className={senderHelperClass}>
+        Signing invitations, codes and signed copies are emailed to people.
+      </p>
+      <div className="space-y-2.5">
+        {EMAIL_CHOICES.map((option) => (
+          <label
+            className="flex cursor-pointer items-start gap-3 rounded-2xl bg-(--surface) px-4 py-3 ring-2 ring-transparent transition has-[:checked]:bg-(--accent-softer) has-[:checked]:ring-(--accent)"
+            key={option.value}
+          >
+            <input
+              checked={choice === option.value}
+              className="mt-1 size-4 accent-(--accent)"
+              disabled={disabled}
+              name="setup-email-choice"
+              onChange={() => onChoice(option.value)}
+              type="radio"
+              value={option.value}
+            />
+            <span className="space-y-0.5">
+              <span className="block text-sm font-bold text-(--fg)">
+                {option.label}
+              </span>
+              <span className="block text-xs leading-5 text-(--secondary)">
+                {option.description}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {choice === "mailbox" ? (
+        <div className="space-y-2 text-sm">
+          <label className={senderLabelClass} htmlFor="setup-mailbox-provider">
+            Which email service?
+          </label>
+          <select
+            className="h-10 w-full rounded-xl border border-(--border-strong) bg-(--paper) px-3 text-sm text-(--fg)"
+            disabled={disabled}
+            id="setup-mailbox-provider"
+            name="setup-mailbox-provider"
+            onChange={(event) =>
+              onMailboxProvider(event.target.value as SmtpProvider)
+            }
+            value={mailboxProvider}
+          >
+            {SETUP_MAILBOX_PROVIDERS.map((provider) => (
+              <option key={provider} value={provider}>
+                {SMTP_PROVIDER_INFO[provider].label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+    </fieldset>
   );
 }
 

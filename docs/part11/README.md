@@ -1,14 +1,14 @@
 # FDA 21 CFR Part 11 validation pack
 
-These are starting documents for an organization that wants to use InkSeal for records that fall under FDA 21 CFR Part 11. Copy them into your own quality system, fill in the blanks marked `[like this]`, and change anything that doesn't match how you work.
+These are starting documents for an organization that wants to use PheonixSign for records that fall under FDA 21 CFR Part 11. Copy them into your own quality system, fill in the blanks marked `[like this]`, and change anything that doesn't match how you work.
 
-> **This is not legal or regulatory advice.** InkSeal's maintainers do not validate your install, and nothing here says that an install meets Part 11. Whether yours does depends on how you validate it, run it, and control it. Ask your quality and regulatory people, and a lawyer when it matters.
+> **This is not legal or regulatory advice.** PheonixSign's maintainers do not validate your install, and nothing here says that an install meets Part 11. Whether yours does depends on how you validate it, run it, and control it. Ask your quality and regulatory people, and a lawyer when it matters.
 
-## What InkSeal does and what you do
+## What PheonixSign does and what you do
 
-InkSeal provides the software controls in **Part 11 mode**, which an administrator turns on under Settings. The rest is yours.
+PheonixSign provides the software controls in **Part 11 mode**, which an administrator turns on under Settings. The rest is yours.
 
-| InkSeal (software)                                                                                | Your organization                                                                                           |
+| PheonixSign (software)                                                                            | Your organization                                                                                           |
 | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Signers sign with their own account. An administrator records how they checked who the person is. | Decide who may sign, check identities, and keep the evidence (11.100(b)).                                   |
 | Email and password to open the document, and again at each signature.                             | Make sure people keep their passwords to themselves, and train them (11.10(i), 11.300).                     |
@@ -23,11 +23,11 @@ InkSeal provides the software controls in **Part 11 mode**, which an administrat
 | Document                                                    | What it is for                                                                                |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | [Requirements](requirements.md)                             | What the system has to do, one numbered requirement per line, each tied to a Part 11 section. |
-| [Traceability matrix](traceability-matrix.md)               | Each requirement, where InkSeal meets it, and the test that shows it.                         |
+| [Traceability matrix](traceability-matrix.md)               | Each requirement, where PheonixSign meets it, and the test that shows it.                     |
 | [Risk assessment](risk-assessment.md)                       | What can go wrong, how bad it would be, and what controls it.                                 |
 | [Installation qualification](installation-qualification.md) | A checklist for each new deployment.                                                          |
 | [Operational qualification](operational-qualification.md)   | Test scripts a person runs on your install, with places to record results.                    |
-| [Release and change control](change-control.md)             | How to take a new InkSeal version, and the evidence each release gives you.                   |
+| [Release and change control](change-control.md)             | How to take a new PheonixSign version, and the evidence each release gives you.               |
 | [Suppliers](suppliers.md)                                   | Vercel, Neon and Resend: what each one holds, and what to get from each.                      |
 | [Procedures (SOP templates)](procedures.md)                 | Accounts and identity checks, signing, audit review, locks, records, incidents.               |
 | [FDA certification letter](fda-certification-letter.md)     | A template for the letter 11.100(c) asks for.                                                 |
@@ -35,7 +35,7 @@ InkSeal provides the software controls in **Part 11 mode**, which an administrat
 
 ## Suggested order
 
-1. Read [Known gaps](known-gaps.md) and [Risk assessment](risk-assessment.md), and decide whether InkSeal fits your records.
+1. Read [Known gaps](known-gaps.md) and [Risk assessment](risk-assessment.md), and decide whether PheonixSign fits your records.
 2. Adopt the [procedures](procedures.md) and the [requirements](requirements.md), changed to suit you.
 3. Deploy, then run the [installation qualification](installation-qualification.md).
 4. Turn on Part 11 mode and run the [operational qualification](operational-qualification.md).

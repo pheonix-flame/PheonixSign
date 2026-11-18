@@ -16,6 +16,7 @@ import { parseEmailDomainList, SIGNUP_MODES } from "./signup-policy.ts";
 export type OrganizationSettingsField =
   | "allowedEmailDomains"
   | "brandColor"
+  | "externalSignerCode"
   | "organizationName"
   | "privacyUrl"
   | "retentionDays"
@@ -39,6 +40,8 @@ export type OrganizationSettingsView = {
   allowedEmailDomains: string;
   /** "#rrggbb", or empty for the default color. */
   brandColor: string;
+  /** People outside the organization must enter an emailed code to sign. */
+  externalSignerCode: boolean;
   hosted: boolean;
   /** Part 11 mode is on: the retention period cannot be set. */
   part11Mode: boolean;
@@ -68,6 +71,7 @@ export function toOrganizationSettingsView(
   return {
     allowedEmailDomains: settings.allowedEmailDomains.join(", "),
     brandColor: settings.brandColor ?? "",
+    externalSignerCode: settings.externalSignerCode,
     hosted: settings.hosted,
     logoUrl:
       settings.logoVersion === null
@@ -136,6 +140,7 @@ const optionalBrandColor = z.preprocess(
 const organizationSettingsSchema = z.object({
   allowedEmailDomains: z.string().max(4000).default(""),
   brandColor: optionalBrandColor.default(null),
+  externalSignerCode: z.boolean().default(true),
   organizationName: z.string().trim().min(1).max(120),
   privacyUrl: optionalWebUrl.default(null),
   retentionDays: z
@@ -154,6 +159,7 @@ const organizationSettingsSchema = z.object({
 const FIELD_MESSAGES: Record<OrganizationSettingsField, string> = {
   allowedEmailDomains: "Enter one or more domains, such as yourcompany.com",
   brandColor: "Enter a color as six letters and digits, such as #1a73e8",
+  externalSignerCode: "Choose whether people outside need a code",
   organizationName: "Enter the name of your organization",
   privacyUrl: "Enter a full web address starting with https://",
   retentionDays: "Enter a number of days, 30 or more, or leave this empty",
@@ -259,6 +265,7 @@ export async function updateOrganizationSettings(
   return saveSettings(
     {
       ...(domainRule ? { allowedEmailDomains: domains } : {}),
+      externalSignerCode: input.externalSignerCode,
       organizationName: input.organizationName,
       retentionDays: input.retentionDays,
       signupMode: input.signupMode,
@@ -283,6 +290,7 @@ export async function updateOrganizationSettings(
 const AUDITED_SETTINGS = [
   "allowedEmailDomains",
   "brandColor",
+  "externalSignerCode",
   "organizationName",
   "privacyUrl",
   "retentionDays",

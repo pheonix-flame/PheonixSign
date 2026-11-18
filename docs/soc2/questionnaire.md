@@ -1,11 +1,11 @@
 # Questionnaire answers
 
-Answers to the questions customer security questionnaires (SIG Lite, CAIQ, and the ones companies write themselves) ask most often, for a InkSeal install set up as the [setup checklist](README.md#setup-checklist) describes. Replace each `[bracket]` with your own facts, and change any answer that is not true of your install. An answer you cannot back with evidence is worse than "no".
+Answers to the questions customer security questionnaires (SIG Lite, CAIQ, and the ones companies write themselves) ask most often, for a PheonixSign install set up as the [setup checklist](README.md#setup-checklist) describes. Replace each `[bracket]` with your own facts, and change any answer that is not true of your install. An answer you cannot back with evidence is worse than "no".
 
 ## Company and scope
 
 **Do you have a SOC 2 report?**
-`[Our organization's SOC 2 Type 2 report covers the e-signature service.]` Or, if not: the service runs on Vercel, Neon and Resend, each of which has its own SOC 2 Type 2 report, available under NDA. We run InkSeal, an open-source e-signature application, on our own accounts with those vendors; no other company handles your documents.
+`[Our organization's SOC 2 Type 2 report covers the e-signature service.]` Or, if not: the service runs on Vercel, Neon and Resend, each of which has its own SOC 2 Type 2 report, available under NDA. We run PheonixSign, an open-source e-signature application, on our own accounts with those vendors; no other company handles your documents.
 
 **Who hosts the service, and where is data stored?**
 Vercel (application and file storage) in `[region]`, Neon (Postgres database) in `[region]`, and Resend (email) in `[region]`. All three are under contract with `[us]`.
@@ -64,7 +64,7 @@ The audit trails in the database are kept with the records they describe. `[Our 
 Through pull requests to our copy of the code, reviewed by `[a second person]` before merging. Each change gets a preview deployment first. Every deployment is kept and can be rolled back. Database changes are versioned migrations applied by the production build.
 
 **How do you handle vulnerabilities?**
-We take each SignuDoc release `[within N days, and security fixes within N days]`. The InkSeal repository runs CodeQL, dependency review and `npm audit`, and each release has an SBOM and signed build provenance. `[We run our own penetration test yearly.]`
+We take each SignuDoc release `[within N days, and security fixes within N days]`. The PheonixSign repository runs CodeQL, dependency review and `npm audit`, and each release has an SBOM and signed build provenance. `[We run our own penetration test yearly.]`
 
 **Do you have backups, and do you test them?**
 Yes. Neon keeps point-in-time history for `[N days]`. A daily backup copies the database and every file to a separate storage account `[in another Vercel team]`, kept `[30]` days. We test a full restore `[yearly]`, most recently on `[date]`.

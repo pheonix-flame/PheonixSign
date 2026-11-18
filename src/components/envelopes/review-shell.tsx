@@ -77,7 +77,7 @@ function describeSignatureLevel(level: SignatureLevel, providerName: string) {
     case "qualified":
       return `Qualified electronic signatures through ${providerName}`;
     default:
-      return "InkSeal signatures";
+      return "PheonixSign signatures";
   }
 }
 

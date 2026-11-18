@@ -3,7 +3,8 @@ import { test } from "node:test";
 
 import type { Resend } from "resend";
 
-import { createEmailService } from "./email.ts";
+import { createEmailService, isEmailNotConnectedError } from "./email.ts";
+import type { SmtpOutgoingMessage } from "./smtp.ts";
 
 // What the Resend client is asked to do when the service turns a request
 // away for rate. Nothing here talks to Resend.
@@ -129,4 +130,167 @@ test("a batch turned away for rate is sent again too", async () => {
 
   assert.equal(deliveries[0]?.messageId, "email_1");
   assert.equal(requests(), 2);
+});
+
+// Sending through a mailbox chosen in Settings (Gmail and the like). The
+// connection is a fake: nothing reaches a mail server.
+
+const MAILBOX = {
+  address: "me@gmail.com",
+  host: "smtp.gmail.com",
+  password: "apppassword",
+  port: 465 as const,
+  provider: "gmail" as const,
+  username: "me@gmail.com",
+};
+
+function mailboxService(
+  options: {
+    failWith?: Error & { code?: string };
+    readable?: boolean;
+  } = {},
+) {
+  const sent: SmtpOutgoingMessage[] = [];
+  let connections = 0;
+  let closed = 0;
+  const service = createEmailService({
+    createSmtp: (settings) => {
+      assert.deepEqual(settings, MAILBOX);
+      connections += 1;
+
+      return {
+        close: () => {
+          closed += 1;
+        },
+        send: async (message) => {
+          if (options.failWith) {
+            throw options.failWith;
+          }
+
+          sent.push(message);
+
+          return {
+            accepted: [message.to],
+            messageId: "<1@gmail>",
+            rejected: [],
+          };
+        },
+        verify: async () => undefined,
+      };
+    },
+    env: { EMAIL_DRIVER: "resend", NODE_ENV: "test" },
+    loadTransport: async () =>
+      options.readable === false
+        ? {
+            readable: false,
+            view: {
+              address: MAILBOX.address,
+              host: MAILBOX.host,
+              passwordReadable: false,
+              port: 465,
+              provider: "gmail",
+              updatedAt: 1,
+              username: null,
+            },
+          }
+        : {
+            readable: true,
+            settings: MAILBOX,
+            view: {
+              address: MAILBOX.address,
+              host: MAILBOX.host,
+              passwordReadable: true,
+              port: 465,
+              provider: "gmail",
+              updatedAt: 1,
+              username: null,
+            },
+          },
+    resolveAddresses: async () => ({
+      senderAddress: "Acme Legal <onboarding@resend.dev>",
+      supportAddress: "help@acme.test",
+    }),
+  });
+
+  return {
+    closed: () => closed,
+    connections: () => connections,
+    sent,
+    service,
+  };
+}
+
+test("a chosen mailbox sends as itself, under the organization's name, with no Resend key", async () => {
+  const { closed, sent, service } = mailboxService();
+
+  const delivery = await service.send({
+    ...MESSAGE,
+    attachments: [
+      {
+        content: new Uint8Array([37, 80, 68, 70]),
+        contentType: "application/pdf",
+        filename: "signed.pdf",
+      },
+    ],
+    htmlBody: "<p>Attached.</p>",
+  });
+
+  assert.equal(delivery.messageId, "<1@gmail>");
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0]?.from, "Acme Legal <me@gmail.com>");
+  assert.equal(sent[0]?.to, "signer@example.test");
+  assert.equal(sent[0]?.replyTo, "help@acme.test");
+  assert.equal(sent[0]?.attachments?.[0]?.filename, "signed.pdf");
+  assert.ok(Buffer.isBuffer(sent[0]?.attachments?.[0]?.content));
+  assert.equal(closed(), 1);
+});
+
+test("a batch through a mailbox goes one message at a time over one connection", async () => {
+  const { closed, connections, sent, service } = mailboxService();
+
+  const results = await service.sendBatch([
+    MESSAGE,
+    { ...MESSAGE, to: "second@example.test" },
+  ]);
+
+  assert.equal(results.length, 2);
+  assert.deepEqual(
+    sent.map((message) => message.to),
+    ["signer@example.test", "second@example.test"],
+  );
+  assert.equal(connections(), 1);
+  assert.equal(closed(), 1);
+});
+
+test("a refused sign-in is explained in plain words", async () => {
+  const failure = Object.assign(new Error("Invalid login"), {
+    code: "EAUTH",
+    response: "535-5.7.8 Username and Password not accepted.",
+  });
+  const { closed, service } = mailboxService({ failWith: failure });
+
+  await assert.rejects(
+    service.send(MESSAGE),
+    /Gmail or Google Workspace did not accept that address and app password.*535-5\.7\.8/,
+  );
+  assert.equal(closed(), 1);
+});
+
+test("a saved password that can no longer be read counts as email not connected", async () => {
+  const { service } = mailboxService({ readable: false });
+
+  await assert.rejects(service.send(MESSAGE), (error: unknown) =>
+    isEmailNotConnectedError(error),
+  );
+});
+
+test("with no mailbox and no Resend key, email is not connected", async () => {
+  const service = createEmailService({
+    env: { EMAIL_DRIVER: "resend", NODE_ENV: "test" },
+    loadTransport: async () => null,
+  });
+
+  await assert.rejects(service.send(MESSAGE), (error: unknown) =>
+    isEmailNotConnectedError(error),
+  );
 });

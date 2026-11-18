@@ -70,6 +70,13 @@ import {
   parseSignatureMeaning,
   signatureMeaningLabel,
 } from "./part11.ts";
+import {
+  accountsCountAsInside,
+  findSignersNeedingCode,
+  type InsideRules,
+  organizationDomains,
+} from "./external-signers.ts";
+import { isHostedMode } from "./utils/env.ts";
 import { getBranding, readStoredSettings } from "./settings.ts";
 import { type SignatureMeaning } from "./types/domain.ts";
 import { importPdfDocument } from "./services/document-import.ts";
@@ -81,6 +88,7 @@ import {
   recordEmailSent,
 } from "./services/audit.ts";
 import {
+  assertEmailConnected,
   createEmailService,
   EMAIL_NOT_CONNECTED_MESSAGE,
   isEmailNotConnectedError,
@@ -365,6 +373,16 @@ export type DraftSignerStepSigner = {
 export type DraftSignerStepData = {
   copyRecipients: readonly CopyRecipientRecord[];
   envelopeId: string;
+  /**
+   * When set, people outside the organization will be asked for a code
+   * emailed to them. Says who counts as inside, for the sender to read.
+   */
+  outsideCode?: {
+    /** People with a confirmed account here count as inside. */
+    accounts: boolean;
+    /** The organization's own domains. */
+    domains: string[];
+  } | null;
   /** Part 11 mode is on, so each signer needs a meaning and an account. */
   part11Mode?: boolean;
   signers: readonly DraftSignerStepSigner[];
@@ -424,7 +442,7 @@ export type EnvelopeDetailData = {
   /** Sent in Part 11 mode: a void needs a reason. */
   part11: boolean;
   /**
-   * How signers sign, when not with InkSeal's own simple signature: for
+   * How signers sign, when not with PheonixSign's own simple signature: for
    * example "Qualified electronic signatures through eID Easy".
    */
   signatureTypeLabel: string | null;
@@ -457,13 +475,27 @@ export class EnvelopeMutationError extends Error {
   }
 }
 
+/** Who counts as inside the organization, from the stored settings. */
+function insideRulesFrom(
+  settings: Awaited<ReturnType<typeof readStoredSettings>>,
+): InsideRules {
+  return {
+    allowedEmailDomains: settings?.allowedEmailDomains ?? [],
+    externalSignerCode: settings?.externalSignerCode ?? true,
+    hosted: isHostedMode(),
+    signupMode: settings?.signupMode ?? "open",
+  };
+}
+
 /**
  * The email service for a send. With no provider connected, sending is
  * refused with a message that says so, before anything changes, instead of
  * failing as an unexpected server error (issue #53).
  */
-function createEmailServiceForSending(): EmailService {
+async function createEmailServiceForSending(): Promise<EmailService> {
   try {
+    await assertEmailConnected();
+
     return createEmailService();
   } catch (error) {
     if (isEmailNotConnectedError(error)) {
@@ -2012,11 +2044,19 @@ export async function getDraftSignerStepDataForUser(
   }
 
   const checks = await listSignerCheckSettings(envelopeId, database);
+  const storedSettings = await readStoredSettings(database);
+  const insideRules = insideRulesFrom(storedSettings);
 
   return {
     copyRecipients: await listCopyRecipientsForEnvelopeId(envelopeId, database),
     envelopeId,
-    part11Mode: (await readStoredSettings(database))?.part11Mode ?? false,
+    outsideCode: insideRules.externalSignerCode
+      ? {
+          accounts: accountsCountAsInside(insideRules),
+          domains: organizationDomains(insideRules),
+        }
+      : null,
+    part11Mode: storedSettings?.part11Mode ?? false,
     signers: (await listSignersForEnvelopeId(envelopeId, database)).map(
       (signer) => ({
         email: signer.email,
@@ -2392,7 +2432,19 @@ export async function sendDraftEnvelope(
 
   // In Part 11 mode each signer signs with their own verified account, and
   // the envelope keeps that rule even if the mode is turned off later.
-  const part11 = (await readStoredSettings(database))?.part11Mode ?? false;
+  const storedSettings = await readStoredSettings(database);
+  const part11 = storedSettings?.part11Mode ?? false;
+  // People outside the organization must enter an emailed code, when the
+  // organization asks for it, whatever check the sender chose for them.
+  // Part 11 signers sign in to their own confirmed account instead, which
+  // is the stronger check.
+  const signersNeedingCode = part11
+    ? []
+    : await findSignersNeedingCode(
+        signers,
+        insideRulesFrom(storedSettings),
+        database,
+      );
 
   // Signatures in the signers' own names need the install's signing
   // provider. Part 11 envelopes are signed with the signers' accounts, and
@@ -2457,7 +2509,7 @@ export async function sendDraftEnvelope(
     );
   }
 
-  const emailService = createEmailServiceForSending();
+  const emailService = await createEmailServiceForSending();
   const storageService = createStorageService();
   const sourcePdfHead = await storageService.headObject(envelope.sourcePdfKey);
 
@@ -2544,6 +2596,18 @@ export async function sendDraftEnvelope(
         `,
         [sentAt, envelopeId],
       );
+
+      if (signersNeedingCode.length > 0) {
+        await tx.query(
+          `
+            UPDATE signers
+            SET require_email_code = true
+            WHERE envelope_id = $1
+              AND id = ANY($2)
+          `,
+          [envelopeId, signersNeedingCode.map((signer) => signer.id)],
+        );
+      }
 
       if (signingProvider) {
         await tx.query(
@@ -2877,6 +2941,17 @@ export async function correctSentEnvelopeSigner(
   // transaction borrows a second pool connection, and overlapping corrections
   // holding the others while they wait on the lock would starve it.
   const branding = await getBranding();
+  // A new address outside the organization must enter an emailed code,
+  // when the organization asks for it.
+  const newAddressNeedsCode =
+    parsedInput.email !== undefined &&
+    (
+      await findSignersNeedingCode(
+        [{ email: parsedInput.email, id: signerId }],
+        insideRulesFrom(await readStoredSettings(database)),
+        database,
+      )
+    ).length > 0;
   const emailAddresses = emailService ? null : await resolveEmailAddresses();
 
   return withTransaction(async (tx) => {
@@ -3058,6 +3133,7 @@ export async function correctSentEnvelopeSigner(
           email_code_expires_at = NULL,
           email_code_attempts = 0,
           email_code_sent_at = NULL,
+          require_email_code = require_email_code OR $9,
           updated_at = $6
         WHERE id = $7
           AND envelope_id = $8
@@ -3072,6 +3148,8 @@ export async function correctSentEnvelopeSigner(
         nowUnixTimestamp,
         signerId,
         envelopeId,
+        // A Part 11 signer signs in to their account, which says who they are.
+        newAddressNeedsCode && !envelope.part11,
       ],
     );
 

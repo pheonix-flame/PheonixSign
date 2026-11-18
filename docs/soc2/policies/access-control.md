@@ -1,6 +1,6 @@
 # Access control policy
 
-**Owner:** `[system owner]`. **Applies to:** the InkSeal install, and the Vercel team, Neon project, Resend account and GitHub repository behind it.
+**Owner:** `[system owner]`. **Applies to:** the PheonixSign install, and the Vercel team, Neon project, Resend account and GitHub repository behind it.
 
 1. **Sign-in.** Staff sign in through `[identity provider]` single sign-on, with MFA enforced there. Password sign-in is off (`PASSWORD_SIGN_IN=off`) except for `[two]` named break-glass administrator accounts, which use two-step sign-in. Without single sign-on, two-step sign-in is required for everyone.
 2. **Sessions** end after `[30]` minutes without use and at most `[12]` hours after sign-in.

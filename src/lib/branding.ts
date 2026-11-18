@@ -5,12 +5,12 @@ import type { ResolvedSettings } from "./settings.ts";
 //
 // A neutral install (the default) carries the name of the organization that
 // runs it, links to that organization's own terms and privacy policy, and
-// says "Powered by InkSeal" in the footer. Hosted mode (HOSTED_MODE=1) is
-// InkSeal run as a public service: its own name, landing page and legal
+// says "Powered by PheonixSign" in the footer. Hosted mode (HOSTED_MODE=1) is
+// PheonixSign run as a public service: its own name, landing page and legal
 // pages. An install's own logo and color are not used there.
 
-export const SIGNUDOC_NAME = "InkSeal";
-// The project's home is its repository. There is no InkSeal-run site that
+export const SIGNUDOC_NAME = "PheonixSign";
+// The project's home is its repository. There is no PheonixSign-run site that
 // an install should send its visitors to, and no address there to write to.
 export const SIGNUDOC_URL = "https://github.com/pheonix-flame/inkseal";
 
@@ -54,7 +54,7 @@ export type Branding = {
   termsUrl: string | null;
 };
 
-/** InkSeal under its own name. Also what a page shows before it knows better. */
+/** PheonixSign under its own name. Also what a page shows before it knows better. */
 export const HOSTED_BRANDING: Branding = {
   brandColor: null,
   contactUrl: "/contact",

@@ -84,3 +84,21 @@ export function buildEmailAddresses(
     supportAddress: settings.supportAddress?.trim() || null,
   };
 }
+
+/**
+ * The same addresses, sent from another mailbox: the display name stays,
+ * the address in the angle brackets changes. Used when email goes out
+ * through a mailbox chosen in Settings, which can only send as itself.
+ */
+export function withSenderAddress(
+  addresses: EmailAddresses,
+  address: string,
+): EmailAddresses {
+  const match = /^(.*)<[^<>]+>\s*$/.exec(addresses.senderAddress);
+  const displayName = match?.[1]?.trim();
+
+  return {
+    ...addresses,
+    senderAddress: displayName ? `${displayName} <${address}>` : address,
+  };
+}

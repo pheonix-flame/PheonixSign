@@ -114,7 +114,7 @@ export async function submitPublicContactMessage(
     const emailService = createEmailService({ env });
     const deliveryResult = await emailService.send({
       htmlBody: [
-        "<p>A new public contact request was submitted through InkSeal.</p>",
+        "<p>A new public contact request was submitted through PheonixSign.</p>",
         `<p><strong>Name:</strong> ${escapeHtml(parsedInput.name)}<br /><strong>Email:</strong> ${escapeHtml(parsedInput.email)}<br /><strong>Submitted at:</strong> ${escapeHtml(submittedAt)}</p>`,
         `<p><strong>Message:</strong><br />${escapedMessageHtml}</p>`,
       ].join(""),
@@ -122,7 +122,7 @@ export async function submitPublicContactMessage(
       subject: `[Contact] ${parsedInput.name}`,
       template: "contact_form",
       textBody: [
-        "A new public contact request was submitted through InkSeal.",
+        "A new public contact request was submitted through PheonixSign.",
         "",
         `Name: ${parsedInput.name}`,
         `Email: ${parsedInput.email}`,

@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you find a security vulnerability in InkSeal, please report it privately. **Do not put the details in a public GitHub issue, discussion or pull request.**
+If you find a security vulnerability in PheonixSign, please report it privately. **Do not put the details in a public GitHub issue, discussion or pull request.**
 
 Send your report through GitHub's private vulnerability reporting: open the [Report a vulnerability](https://github.com/pheonix-flame/inkseal/security/advisories/new) form, which is also on this repository's security advisories page. The report stays between you and the repository's maintainers. Include:
 
@@ -12,13 +12,13 @@ Send your report through GitHub's private vulnerability reporting: open the [Rep
 
 If that form is not available to you, open an issue that asks the maintainers for a private way to reach them, and leave every detail of the vulnerability out of it.
 
-The project has no email address for reports. Each organization that runs InkSeal gives its own install a support address, and that address reaches the organization, not the people who maintain this code. A problem with one particular site, such as its settings or the documents it holds, belongs with the organization that runs it.
+The project has no email address for reports. Each organization that runs PheonixSign gives its own install a support address, and that address reaches the organization, not the people who maintain this code. A problem with one particular site, such as its settings or the documents it holds, belongs with the organization that runs it.
 
 We will acknowledge your report within 7 days and aim to provide a fix or mitigation plan within 30 days, depending on severity and complexity.
 
 ## Scope
 
-This policy covers the InkSeal application code in this repository, including:
+This policy covers the PheonixSign application code in this repository, including:
 
 - Authentication and session handling
 - Signing token and download token generation and verification

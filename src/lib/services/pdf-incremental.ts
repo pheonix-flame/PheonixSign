@@ -19,7 +19,7 @@ import {
 // its signatures, and it is how long-term validation data and archive
 // timestamps go in after the seal.
 //
-// This handles the files InkSeal itself writes: a classic cross-reference
+// This handles the files PheonixSign itself writes: a classic cross-reference
 // table (pdf-lib saved with object streams off), possibly followed by
 // earlier updates of the same kind. A file whose last section is a
 // cross-reference stream is refused.
@@ -576,7 +576,7 @@ export async function appendDocumentTimestamp(
   const fieldRef = allocate();
   const objects: UpdatedObject[] = [];
   // Field names must differ; the object number does.
-  const fieldName = `InkSeal archive timestamp ${String(fieldRef.number)}`;
+  const fieldName = `PheonixSign archive timestamp ${String(fieldRef.number)}`;
 
   objects.push({
     body: Buffer.from(

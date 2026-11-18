@@ -12,6 +12,7 @@ const stored: AppSettings = {
   allowedEmailDomains: ["acme.com"],
   brandColor: null,
   emailReadyAt: null,
+  externalSignerCode: true,
   logoVersion: null,
   organizationName: "Acme Corp",
   part11Mode: false,
@@ -79,21 +80,21 @@ test("a neutral install goes by the organization's name and links", () => {
   });
 });
 
-test("a neutral install with no name yet goes by InkSeal and has no legal links", () => {
+test("a neutral install with no name yet goes by PheonixSign and has no legal links", () => {
   const branding = buildBranding(resolveSettings(null, {}));
 
-  assert.equal(branding.productName, "InkSeal");
+  assert.equal(branding.productName, "PheonixSign");
   assert.equal(branding.organizationName, null);
   assert.equal(branding.termsUrl, null);
   assert.equal(branding.privacyUrl, null);
   assert.equal(branding.contactUrl, null);
 });
 
-test("hosted mode keeps InkSeal's own name and pages whatever is stored", () => {
+test("hosted mode keeps PheonixSign's own name and pages whatever is stored", () => {
   const branding = buildBranding(resolveSettings(stored, { HOSTED_MODE: "1" }));
 
   assert.equal(branding.hosted, true);
-  assert.equal(branding.productName, "InkSeal");
+  assert.equal(branding.productName, "PheonixSign");
   assert.equal(branding.organizationName, null);
   assert.equal(branding.termsUrl, "/terms");
   assert.equal(branding.privacyUrl, "/privacy");

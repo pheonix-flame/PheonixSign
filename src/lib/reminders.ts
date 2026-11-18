@@ -23,6 +23,7 @@ import {
   recordEmailSent,
 } from "./services/audit.ts";
 import {
+  assertEmailConnected,
   createEmailService,
   EMAIL_NOT_CONNECTED_MESSAGE,
   isEmailNotConnectedError,
@@ -628,6 +629,10 @@ export async function sendManualEnvelopeNudge(
   let service: EmailService;
 
   try {
+    if (!emailService) {
+      await assertEmailConnected();
+    }
+
     service = emailService ?? createEmailService();
   } catch (error) {
     if (isEmailNotConnectedError(error)) {

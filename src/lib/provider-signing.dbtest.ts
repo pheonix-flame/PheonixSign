@@ -11,7 +11,7 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 import pg from "pg";
 
 import { replaceDbPoolForTests } from "./db/connection.ts";
-import { openTestDatabase } from "./db/test-database.ts";
+import { openTestDatabase, turnOffOutsiderCodes } from "./db/test-database.ts";
 import { ELECTRONIC_RECORDS_DISCLOSURE_VERSION } from "./electronic-records-disclosure.ts";
 import {
   EnvelopeMutationError,
@@ -61,6 +61,7 @@ import {
 const run = promisify(execFile);
 
 let database: pg.Pool;
+let restoreOutsiderCodes: () => Promise<void> = async () => undefined;
 let storageDir: string;
 let storageService: StorageService;
 let pki: TestPki;
@@ -84,6 +85,9 @@ function setEnv(values: Record<string, string | undefined>) {
 
 before(async () => {
   database = await openTestDatabase();
+  // Every signer here is outside the organization; these tests are not
+  // about the emailed code that outsiders are asked for.
+  restoreOutsiderCodes = await turnOffOutsiderCodes(database);
   // The invitation email reads the install's name through the shared pool.
   globalThis.__signudocPgPool = database;
   storageDir = await mkdtemp(path.join(tmpdir(), "signudoc-provider-"));
@@ -123,6 +127,7 @@ after(async () => {
   await database.query(`delete from public."user" where id = any($1)`, [
     createdUsers,
   ]);
+  await restoreOutsiderCodes();
   await database.end();
 
   for (const [name, value] of envBefore) {

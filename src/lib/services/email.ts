@@ -4,14 +4,29 @@ import path from "node:path";
 
 import { Resend } from "resend";
 
+import {
+  loadEmailTransport,
+  type LoadedEmailTransport,
+  type SmtpSettings,
+} from "../email-transport.ts";
 import { getSettings } from "../settings.ts";
 import { type EmailTemplateKind } from "../types/domain.ts";
 import { getEnv, isLocalDeployment, type EnvSource } from "../utils/env.ts";
-import { buildEmailAddresses, type EmailAddresses } from "./email-addresses.ts";
+import {
+  buildEmailAddresses,
+  type EmailAddresses,
+  withSenderAddress,
+} from "./email-addresses.ts";
 import {
   assertServiceConfig,
   ServiceConfigurationError,
 } from "./service-config.ts";
+import {
+  createSmtpClient,
+  type CreateSmtpClient,
+  describeSmtpError,
+  type SmtpOutgoingMessage,
+} from "./smtp.ts";
 
 // The addresses mail is sent from and replied to are not needed here: they
 // come from RESEND_FROM_EMAIL and SUPPORT_EMAIL when those are set, and from
@@ -30,11 +45,11 @@ export type EmailAttachment = {
 };
 
 /**
- * Resend accepts up to 40 MB per message once attachments are base64
- * encoded, which makes them a third larger. Above this the message goes out
- * with links only.
+ * Gmail and Yahoo take messages up to 25 MB once attachments are base64
+ * encoded, which makes them a third larger (Resend takes 40 MB). Above this
+ * the message goes out with links only, whichever way email is sent.
  */
-export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+export const MAX_ATTACHMENT_BYTES = 18 * 1024 * 1024;
 
 export function fitsAsAttachments(
   attachments: readonly EmailAttachment[],
@@ -71,6 +86,13 @@ type CreateEmailServiceOptions = {
   /** Replaced in tests, where there is no database to read settings from. */
   resolveAddresses?: () => Promise<EmailAddresses>;
   resendClient?: Resend;
+  /** Replaced in tests, so that nothing connects to a real mail server. */
+  createSmtp?: CreateSmtpClient;
+  /**
+   * The mailbox chosen in Settings, if any. Replaced in tests, where there
+   * is no database to read it from.
+   */
+  loadTransport?: () => Promise<LoadedEmailTransport | null>;
   /** Replaced in tests, so that they do not really wait. */
   wait?: (milliseconds: number) => Promise<void>;
 };
@@ -294,10 +316,50 @@ export async function resolveEmailAddresses(
 ): Promise<EmailAddresses> {
   const settings = await getSettings(env);
 
-  return resolveEmailDriver(env) === "capture"
-    ? buildEmailAddresses(settings, DEFAULT_CAPTURE_SENDER_ADDRESS)
-    : buildEmailAddresses(settings);
+  if (resolveEmailDriver(env) === "capture") {
+    return buildEmailAddresses(settings, DEFAULT_CAPTURE_SENDER_ADDRESS);
+  }
+
+  const transport = await loadEmailTransport(env);
+  const addresses = buildEmailAddresses(settings);
+
+  // A mailbox only sends as itself: Gmail and others rewrite any other From.
+  return transport
+    ? withSenderAddress(addresses, transport.view.address)
+    : addresses;
 }
+
+/**
+ * Whether email can be sent at all: a mailbox chosen in Settings, a Resend
+ * key, or development capture. Fails with the same error as sending would,
+ * so a caller can refuse before it changes anything.
+ */
+export async function assertEmailConnected(
+  env: EnvSource = process.env,
+): Promise<void> {
+  if (resolveEmailDriver(env) === "capture") {
+    return;
+  }
+
+  const transport = await loadEmailTransport(env);
+
+  if (transport?.readable) {
+    return;
+  }
+
+  if (transport) {
+    throw new ServiceConfigurationError("email", [EMAIL_PASSWORD_UNREADABLE]);
+  }
+
+  assertServiceConfig("email", EMAIL_ENV_KEYS, env);
+}
+
+/**
+ * Named in the error when the saved mailbox password cannot be read any
+ * more: the site's secret changed since it was saved.
+ */
+const EMAIL_PASSWORD_UNREADABLE =
+  "the email password saved in Settings (enter it again)";
 
 /** What a sender is told when an action needs email and none is connected. */
 export const EMAIL_NOT_CONNECTED_MESSAGE =
@@ -314,28 +376,132 @@ export function isEmailNotConnectedError(error: unknown): boolean {
   );
 }
 
+function toSmtpMessage(
+  message: TransactionalEmailMessage,
+  addresses: EmailAddresses,
+): SmtpOutgoingMessage {
+  return {
+    ...(message.attachments?.length
+      ? {
+          attachments: message.attachments.map((attachment) => ({
+            content: Buffer.from(attachment.content),
+            contentType: attachment.contentType,
+            filename: attachment.filename,
+          })),
+        }
+      : {}),
+    from: addresses.senderAddress,
+    html: message.htmlBody,
+    replyTo: message.replyTo ?? addresses.supportAddress ?? undefined,
+    subject: message.subject,
+    text: message.textBody,
+    to: message.to,
+  };
+}
+
+/**
+ * Sends through the mailbox chosen in Settings. Messages in a batch go one
+ * by one over the same connection: a mailbox has no batch endpoint.
+ */
+async function sendThroughMailbox(
+  settings: SmtpSettings,
+  messages: readonly TransactionalEmailMessage[],
+  addresses: EmailAddresses,
+  createSmtp: CreateSmtpClient,
+): Promise<EmailDeliveryResult[]> {
+  const client = createSmtp(settings);
+  const sender = withSenderAddress(addresses, settings.address);
+  const results: EmailDeliveryResult[] = [];
+
+  try {
+    for (const message of messages) {
+      try {
+        const delivery = await client.send(toSmtpMessage(message, sender));
+
+        results.push({
+          accepted: delivery.accepted.length ? delivery.accepted : [message.to],
+          messageId: delivery.messageId,
+          rejected: delivery.rejected,
+        });
+      } catch (error) {
+        throw new Error(describeSmtpError(error, settings), { cause: error });
+      }
+    }
+  } finally {
+    client.close();
+  }
+
+  return results;
+}
+
 export function createEmailService({
+  createSmtp = createSmtpClient,
   env = process.env,
+  loadTransport,
   resolveAddresses = () => resolveEmailAddresses(env),
   resendClient,
   wait = waitFor,
 }: CreateEmailServiceOptions = {}): EmailService {
-  if (!resendClient && resolveEmailDriver(env) === "capture") {
+  if (
+    !resendClient &&
+    !loadTransport &&
+    resolveEmailDriver(env) === "capture"
+  ) {
     return createCaptureEmailService(env, resolveAddresses);
   }
 
-  if (!resendClient) {
-    assertServiceConfig("email", EMAIL_ENV_KEYS, env);
+  // A Resend client handed in (by a test) means Resend, and nothing else is
+  // looked up. Otherwise the mailbox chosen in Settings wins, and Resend is
+  // used when there is none. It is decided at each send, so a change in
+  // Settings applies to the next message.
+  const readTransport =
+    loadTransport ??
+    (resendClient ? async () => null : () => loadEmailTransport(env));
+  let client: Resend | undefined = resendClient;
+
+  function resend(): Resend {
+    if (!client) {
+      assertServiceConfig("email", EMAIL_ENV_KEYS, env);
+      client = new Resend(getEnv(env).email.apiKey!);
+    }
+
+    return client;
   }
 
-  const client = resendClient ?? new Resend(getEnv(env).email.apiKey!);
+  async function mailbox(): Promise<SmtpSettings | null> {
+    const transport = await readTransport();
+
+    if (!transport) {
+      return null;
+    }
+
+    if (!transport.readable) {
+      throw new ServiceConfigurationError("email", [EMAIL_PASSWORD_UNREADABLE]);
+    }
+
+    return transport.settings;
+  }
 
   return {
     async send(message, options) {
+      const smtp = await mailbox();
+
+      if (smtp) {
+        const [result] = await sendThroughMailbox(
+          smtp,
+          [message],
+          await resolveAddresses(),
+          createSmtp,
+        );
+
+        return result!;
+      }
+
+      const resendClient = resend();
       const config = await resolveAddresses();
       const { data, error } = await sendWithinRateLimit(
         () =>
-          client.emails.send(
+          resendClient.emails.send(
             buildResendPayload(message, config),
             buildResendOptions(options),
           ),
@@ -362,10 +528,22 @@ export function createEmailService({
         throw new Error("Messages with attachments must be sent one by one.");
       }
 
+      const smtp = await mailbox();
+
+      if (smtp) {
+        return sendThroughMailbox(
+          smtp,
+          messages,
+          await resolveAddresses(),
+          createSmtp,
+        );
+      }
+
+      const resendClient = resend();
       const config = await resolveAddresses();
       const { data, error } = await sendWithinRateLimit(
         () =>
-          client.batch.send(
+          resendClient.batch.send(
             messages.map((message) => buildResendPayload(message, config)),
             buildResendOptions(options),
           ),

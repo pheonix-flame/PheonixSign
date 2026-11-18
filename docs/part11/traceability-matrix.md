@@ -1,6 +1,6 @@
 # Traceability matrix
 
-Each requirement in [Requirements](requirements.md), where InkSeal meets it, and how it is tested. Paths are relative to the repository root.
+Each requirement in [Requirements](requirements.md), where PheonixSign meets it, and how it is tested. Paths are relative to the repository root.
 
 Three kinds of test evidence back the matrix:
 

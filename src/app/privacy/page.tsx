@@ -7,8 +7,8 @@ import { resolvePublicSupportAddress } from "@/lib/public-contact";
 
 export const metadata: Metadata = {
   description:
-    "Read how InkSeal collects, uses, shares, retains, and protects information for its public U.S. e-signature service.",
-  title: "Privacy Policy | InkSeal",
+    "Read how PheonixSign collects, uses, shares, retains, and protects information for its public U.S. e-signature service.",
+  title: "Privacy Policy | PheonixSign",
 };
 
 export default async function PrivacyPage() {
@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
 
   return (
     <PublicDocumentShell
-      description="This Privacy Policy describes the categories of information InkSeal collects, how we use and share that information, the rights available to users, and how to contact us with privacy requests."
+      description="This Privacy Policy describes the categories of information PheonixSign collects, how we use and share that information, the rights available to users, and how to contact us with privacy requests."
       lastUpdated="March 25, 2026"
       title="Privacy Policy"
     >
@@ -27,16 +27,16 @@ export default async function PrivacyPage() {
           1. Scope and service design
         </h2>
         <p>
-          InkSeal is a U.S.-focused electronic-signature service designed for
-          ordinary business agreements and similar commercial workflows. This
-          Privacy Policy applies to account holders, signers, website visitors,
-          and support contacts who interact with InkSeal.
+          PheonixSign is a U.S.-focused electronic-signature service designed
+          for ordinary business agreements and similar commercial workflows.
+          This Privacy Policy applies to account holders, signers, website
+          visitors, and support contacts who interact with PheonixSign.
         </p>
         <p>
-          InkSeal is not intended for legally required consumer disclosure
+          PheonixSign is not intended for legally required consumer disclosure
           workflows that need a separate E-SIGN consumer-consent process. If a
-          sender uses InkSeal outside that scope, the sender remains responsible
-          for making sure the workflow is legally appropriate.
+          sender uses PheonixSign outside that scope, the sender remains
+          responsible for making sure the workflow is legally appropriate.
         </p>
       </section>
 
@@ -69,7 +69,7 @@ export default async function PrivacyPage() {
           </li>
           <li>
             <strong>Support and communications data</strong>, such as emails you
-            send to InkSeal, account-closure requests, privacy requests, and
+            send to PheonixSign, account-closure requests, privacy requests, and
             feedback about accessibility or product issues.
           </li>
           <li>
@@ -93,9 +93,9 @@ export default async function PrivacyPage() {
           <li>browse or interact with the website.</li>
         </ul>
         <p>
-          We also generate information automatically when InkSeal records audit
-          events, sends transactional emails, secures sessions, enforces rate
-          limits, or stores completed records.
+          We also generate information automatically when PheonixSign records
+          audit events, sends transactional emails, secures sessions, enforces
+          rate limits, or stores completed records.
         </p>
       </section>
 
@@ -127,18 +127,18 @@ export default async function PrivacyPage() {
         </h2>
         <p>
           We may share information with service providers that help us operate
-          InkSeal, such as providers for authentication, cloud storage, email
-          delivery, hosting, infrastructure, logging, security, and customer
-          support.
+          PheonixSign, such as providers for authentication, cloud storage,
+          email delivery, hosting, infrastructure, logging, security, and
+          customer support.
         </p>
         <p>
           We may also disclose information when reasonably necessary to comply
           with law, respond to legal process, protect the rights or safety of
-          InkSeal, users, or the public, or in connection with a merger,
+          PheonixSign, users, or the public, or in connection with a merger,
           acquisition, financing, or asset sale.
         </p>
         <p>
-          InkSeal is not built as an advertising-supported service. If that
+          PheonixSign is not built as an advertising-supported service. If that
           changes, we will update this Privacy Policy before using personal
           information in a materially different way.
         </p>
@@ -173,11 +173,11 @@ export default async function PrivacyPage() {
           7. Security
         </h2>
         <p>
-          InkSeal uses administrative, technical, and physical safeguards that
-          are designed to protect personal information, including authenticated
-          access controls, audit logging, rate limiting, security headers, and
-          cloud-storage controls. No system is perfectly secure, and we cannot
-          guarantee absolute security.
+          PheonixSign uses administrative, technical, and physical safeguards
+          that are designed to protect personal information, including
+          authenticated access controls, audit logging, rate limiting, security
+          headers, and cloud-storage controls. No system is perfectly secure,
+          and we cannot guarantee absolute security.
         </p>
       </section>
 
@@ -187,7 +187,7 @@ export default async function PrivacyPage() {
         </h2>
         <p>
           Depending on where you live and the nature of your relationship with
-          InkSeal, you may have rights to:
+          PheonixSign, you may have rights to:
         </p>
         <ul className="list-disc space-y-2 pl-6">
           <li>know or access the personal information we hold about you;</li>
@@ -246,7 +246,7 @@ export default async function PrivacyPage() {
           10. Cookies and local storage
         </h2>
         <p>
-          InkSeal uses cookies and similar technologies primarily for
+          PheonixSign uses cookies and similar technologies primarily for
           authentication, session continuity, security, and basic application
           state. We may also store limited local settings needed to make the app
           usable, such as interface preferences and page state for active
@@ -261,14 +261,14 @@ export default async function PrivacyPage() {
           11. Children and international use
         </h2>
         <p>
-          InkSeal is not directed to children under 13, and we do not knowingly
-          collect personal information from children through the service. If you
-          believe a child provided personal information to us, contact us so we
-          can review and address the issue.
+          PheonixSign is not directed to children under 13, and we do not
+          knowingly collect personal information from children through the
+          service. If you believe a child provided personal information to us,
+          contact us so we can review and address the issue.
         </p>
         <p>
-          InkSeal is operated for U.S.-focused business use. If you access the
-          service from outside the United States, you understand that
+          PheonixSign is operated for U.S.-focused business use. If you access
+          the service from outside the United States, you understand that
           information may be processed and stored in the United States or other
           locations where our service providers operate.
         </p>

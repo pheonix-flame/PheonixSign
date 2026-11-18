@@ -2,7 +2,7 @@
 
 **Owner:** `[security owner]`. **Deputy:** `[name]`.
 
-1. **What counts:** a suspected misused account, a broken audit chain, a failed seal or restore, data sent to the wrong person, an outage, a vendor's incident notice, or a InkSeal security release that affects us.
+1. **What counts:** a suspected misused account, a broken audit chain, a failed seal or restore, data sent to the wrong person, an outage, a vendor's incident notice, or a PheonixSign security release that affects us.
 2. **Report** to `[channel / address]`. Anyone may report.
 3. **Contain**, as fits:
    - a misused account: remove it in the identity provider, or reset its two-step sign-in under People (which signs it out everywhere); change break-glass passwords;

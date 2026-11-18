@@ -3,7 +3,7 @@
 **Owner:** `[system owner]`.
 
 1. The install deploys from `[branch]` of `[our repository]`. That branch is protected: changes arrive only by pull request, with `[one]` approval from someone other than the author, and the CI checks passing.
-2. **InkSeal updates** arrive as a pull request from the Update SignuDoc workflow. The reviewer reads the changelog for the releases it brings, notes any security fixes and database changes, checks the Vercel preview, and approves.
+2. **PheonixSign updates** arrive as a pull request from the Update SignuDoc workflow. The reviewer reads the changelog for the releases it brings, notes any security fixes and database changes, checks the Vercel preview, and approves.
 3. Security releases are taken within `[7]` days of their release; others within `[30]` days.
 4. **Our own changes** to the code follow the same path, and are described in the pull request.
 5. **Settings** changed in the app (Settings, Organization) are recorded in the site audit trail. Changes to environment variables in Vercel are approved by `[role]` and recorded in `[location]`, and take effect at the next deployment.

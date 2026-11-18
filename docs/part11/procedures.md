@@ -16,7 +16,7 @@ Short templates for the procedures Part 11 expects you to have. Put each into yo
 1. Passwords are personal. Nobody may share one, write one where others can see it, or sign in for someone else.
 2. If a password may be known to someone else, the person changes it at once and tells `[the system owner]`.
 3. Lock screens when away from the computer.
-4. Change passwords `[every N months / when there is reason]`. InkSeal does not force password aging (see [Known gaps](known-gaps.md)).
+4. Change passwords `[every N months / when there is reason]`. PheonixSign does not force password aging (see [Known gaps](known-gaps.md)).
 
 ## SOP-3 Sending and signing regulated records
 
@@ -56,9 +56,9 @@ Short templates for the procedures Part 11 expects you to have. Put each into yo
    - a broken audit chain;
    - a failed restore;
    - an outage that affects regulated records;
-   - a security fix from the InkSeal project.
+   - a security fix from the PheonixSign project.
 2. Record the incident, assess its effect on records, act, and close it with a CAPA where needed.
-3. A security problem in InkSeal itself is reported to the project privately through GitHub's private vulnerability reporting, not in a public issue.
+3. A security problem in PheonixSign itself is reported to the project privately through GitHub's private vulnerability reporting, not in a public issue.
 
 ## SOP-7 Validation and change control (11.10(a), (k))
 

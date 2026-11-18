@@ -367,8 +367,8 @@ function getEnvelopeStatusLabel(status: EnvelopeRecord["status"]): string {
 
 function getCertificateTitle(envelope: EnvelopeRecord): string {
   return envelope.status === "completed"
-    ? "InkSeal Certificate of Completion"
-    : "InkSeal Audit Certificate";
+    ? "PheonixSign Certificate of Completion"
+    : "PheonixSign Audit Certificate";
 }
 
 function getTerminalTimestampLabel(envelope: EnvelopeRecord): string {
@@ -1337,7 +1337,7 @@ export async function renderEnvelopeCertificatePdf(
     signers: input.signers,
   });
   pdfDocument.setTitle(`Audit certificate: ${input.envelope.title}`);
-  pdfDocument.setProducer("InkSeal");
+  pdfDocument.setProducer("PheonixSign");
 
   return seal(pdfDocument, "certificate");
 }

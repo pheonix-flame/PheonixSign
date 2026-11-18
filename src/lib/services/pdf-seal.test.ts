@@ -125,8 +125,8 @@ function verifyByteRange(sealed: Uint8Array) {
 test("a sealed PDF verifies, and any change to it is detected", async (t) => {
   const identity = makeIdentity();
   const sealed = await saveSealedPdf(await makePdf(), identity, {
-    name: "InkSeal",
-    reason: "Signed with InkSeal",
+    name: "PheonixSign",
+    reason: "Signed with PheonixSign",
   });
 
   verifyByteRange(sealed);

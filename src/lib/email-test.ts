@@ -5,6 +5,7 @@ import {
   type EmailService,
 } from "./services/email.ts";
 import { withUserEmailLegalFooter } from "./services/email-legal-footer.ts";
+import { loadEmailTransport } from "./email-transport.ts";
 import { getBranding, getSettings, markEmailReady } from "./settings.ts";
 import { type EnvSource } from "./utils/env.ts";
 import { escapeHtml } from "./utils/html.ts";
@@ -52,6 +53,9 @@ export async function sendTestEmail({
     // an administrator may save a different one while it is on its way.
     const testedSettings = await getSettings(env);
     const { senderAddress: testedSender } = await resolveEmailAddresses(env);
+    const viaMailbox = emailService
+      ? false
+      : (await loadEmailTransport(env))?.readable === true;
 
     await (emailService ?? createEmailService({ env })).send({
       htmlBody: content.htmlBody,
@@ -64,8 +68,9 @@ export async function sendTestEmail({
     // A message accepted from the organization's own address means that
     // address's domain is verified, even when the API key is not allowed to
     // say so. The shared test address proves nothing: it only ever reaches
-    // the owner of the Resend account.
-    if (!isResendTestSender(testedSender)) {
+    // the owner of the Resend account. A mailbox chosen in Settings sends to
+    // anyone once it has sent this.
+    if (viaMailbox || !isResendTestSender(testedSender)) {
       await markEmailReady(true, testedSettings);
     }
 

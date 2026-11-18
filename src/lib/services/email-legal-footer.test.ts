@@ -56,7 +56,7 @@ test("a neutral install with nothing else set links its signer privacy notice an
       "Privacy notice:",
       "https://sign.acme.com/signer-privacy",
       "",
-      "Sent by Acme Corp using InkSeal.",
+      "Sent by Acme Corp using PheonixSign.",
     ].join("\n"),
   );
 });
@@ -86,7 +86,7 @@ test("a neutral install links to the organization's own pages and support addres
       "",
       "Questions? Contact help@acme.com.",
       "",
-      "Sent by Acme Corp using InkSeal.",
+      "Sent by Acme Corp using PheonixSign.",
     ].join("\n"),
   );
   assert.match(
@@ -98,11 +98,11 @@ test("a neutral install links to the organization's own pages and support addres
 test("an install that has not been named yet does not invent a name", () => {
   const result = withUserEmailLegalFooter(
     body,
-    { ...neutral, organizationName: null, productName: "InkSeal" },
+    { ...neutral, organizationName: null, productName: "PheonixSign" },
     env,
   );
 
-  assert.match(result.textBody, /\n\nSent using InkSeal\.$/);
+  assert.match(result.textBody, /\n\nSent using PheonixSign\.$/);
   assert.doesNotMatch(result.textBody, /Acme/);
 });
 
@@ -121,7 +121,10 @@ test("the organization's name and links are escaped in the HTML part", () => {
   assert.doesNotMatch(result.htmlBody, /<Finch>/);
   assert.doesNotMatch(result.htmlBody, /b="2"/);
   // The plain-text part is not HTML and carries the name as it is.
-  assert.match(result.textBody, /Sent by Harbour & <Finch> using InkSeal\./);
+  assert.match(
+    result.textBody,
+    /Sent by Harbour & <Finch> using PheonixSign\./,
+  );
 });
 
 test("a neutral install with no links does not need to know its own URL", () => {

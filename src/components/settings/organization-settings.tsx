@@ -5,16 +5,18 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { FieldShell, ShellButton } from "@/components/shared/form-shell";
 import { BrandingPanel } from "@/components/settings/branding-panel";
+import { EmailSendingPanel } from "@/components/settings/email-sending-panel";
 import { Part11Panel } from "@/components/settings/part11-panel";
 import { PeoplePanel } from "@/components/settings/people-panel";
 import { SecurityPanel } from "@/components/settings/security-panel";
 import { SignerDataPanel } from "@/components/settings/signer-data-panel";
+import { SMTP_PROVIDER_INFO } from "@/lib/email-providers";
 import type { EmailDnsRecord, EmailStatus } from "@/lib/email-status";
 import type {
   OrganizationSettingsField,
   OrganizationSettingsView,
 } from "@/lib/organization-settings";
-import type { SignupMode } from "@/lib/signup-policy";
+import { isPublicMailboxDomain, type SignupMode } from "@/lib/signup-policy";
 
 // The administrator's part of Settings: what the install is called, who can
 // sign up, where email comes from, and whether email works yet.
@@ -125,6 +127,7 @@ export function OrganizationSettings({
         body: JSON.stringify({
           allowedEmailDomains: values.allowedEmailDomains,
           brandColor: values.brandColor,
+          externalSignerCode: values.externalSignerCode,
           organizationName: values.organizationName,
           privacyUrl: values.privacyUrl,
           retentionDays: values.retentionDays,
@@ -271,6 +274,38 @@ export function OrganizationSettings({
             ) : null}
           </fieldset>
 
+          <fieldset className="space-y-4 border-t border-(--border) pt-8">
+            <legend className="float-left mb-4 w-full text-lg font-extrabold tracking-[-0.02em] text-(--fg)">
+              Signers outside your organization
+            </legend>
+            <label className="clear-both flex cursor-pointer items-start gap-3 rounded-2xl bg-(--surface) px-4 py-3.5 ring-2 ring-transparent transition has-[:checked]:bg-(--accent-softer) has-[:checked]:ring-(--accent)">
+              <input
+                checked={values.externalSignerCode}
+                className="mt-1 size-4 accent-(--accent)"
+                disabled={isSaving}
+                name="external-signer-code"
+                onChange={(event) => {
+                  const externalSignerCode = event.target.checked;
+
+                  setValues((current) => ({ ...current, externalSignerCode }));
+                  setFeedback(null);
+                }}
+                type="checkbox"
+              />
+              <span className="space-y-1">
+                <span className="block text-sm font-bold text-(--fg)">
+                  Ask people outside the organization for a code
+                </span>
+                <span className="block text-sm leading-6 text-(--secondary)">
+                  {describeInside(values)} Everyone else is emailed a one-time
+                  code when they open their link, and must enter it before they
+                  can see or sign the document. Senders can still ask anyone for
+                  a code.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
           <div className="space-y-5 border-t border-(--border) pt-8">
             <h3 className="text-lg font-extrabold tracking-[-0.02em] text-(--fg)">
               Email addresses
@@ -282,7 +317,7 @@ export function OrganizationSettings({
                 helper={
                   values.senderAddressFromEnv
                     ? "Set by the RESEND_FROM_EMAIL environment variable."
-                    : "The address emails come from, at a domain you own. A subdomain such as notifications@sign.yourcompany.com keeps this site's mail apart from your everyday email."
+                    : "For sending through Resend: the address emails come from, at a domain you own. A subdomain such as notifications@sign.yourcompany.com keeps this site's mail apart from your everyday email. Not used when email goes out from a Gmail, Yahoo or other mailbox."
                 }
                 label="Send email from"
                 name="sender-address"
@@ -419,6 +454,26 @@ export function OrganizationSettings({
   );
 }
 
+/** Who counts as inside the organization, as the form stands. */
+function describeInside(values: OrganizationSettingsView): string {
+  const domains =
+    values.signupMode === "domains"
+      ? values.allowedEmailDomains
+          .split(/[\s,]+/)
+          .map((domain) => domain.trim().replace(/^@/, "").toLowerCase())
+          .filter((domain) => domain && !isPublicMailboxDomain(domain))
+      : [];
+  const accounts = !values.hosted && values.signupMode !== "open";
+  const inside = [
+    domains.length > 0 ? `an address at ${domains.join(" or ")}` : null,
+    accounts ? "an account on this site" : null,
+  ].filter(Boolean);
+
+  return inside.length > 0
+    ? `Inside means ${inside.join(", or ")}.`
+    : "Anyone can create an account here, so nobody counts as inside.";
+}
+
 async function fetchEmailStatus(
   signal: AbortSignal,
 ): Promise<{ error: string; status: null } | { status: EmailStatus }> {
@@ -506,6 +561,7 @@ function EmailSetupPanel() {
   const canSendTest =
     status !== null &&
     status.state !== "missing_key" &&
+    status.state !== "mailbox_unreadable" &&
     status.state !== "capture";
 
   return (
@@ -513,6 +569,21 @@ function EmailSetupPanel() {
       <h3 className="text-lg font-extrabold tracking-[-0.02em] text-(--fg)">
         Email setup
       </h3>
+
+      <EmailSendingPanel
+        onStatus={(next) => {
+          setLoadError(null);
+          setTestResult(null);
+          setStatus(next);
+        }}
+        resendConnected={
+          status !== null &&
+          status.state !== "missing_key" &&
+          status.state !== "capture" &&
+          status.state !== "mailbox" &&
+          status.state !== "mailbox_unreadable"
+        }
+      />
 
       {loadError ? (
         <p className="notice notice-danger" role="alert">
@@ -642,11 +713,37 @@ function describeEmailStatus(status: EmailStatus): {
         ready: true,
         title: "Emails are being captured, not sent",
       };
+    case "mailbox":
+      return status.tested
+        ? {
+            lines: [
+              `Emails are sent from ${status.address} through ${SMTP_PROVIDER_INFO[status.provider].label}, to any address.`,
+            ],
+            ready: true,
+            title: "Email is working",
+          }
+        : {
+            lines: [
+              `Emails will be sent from ${status.address} through ${SMTP_PROVIDER_INFO[status.provider].label}. Send yourself a test email to make sure it arrives.`,
+            ],
+            ready: false,
+            title: "Email is set up, not tested yet",
+          };
+    case "mailbox_unreadable":
+      return {
+        lines: [
+          `The saved password for ${status.address} can no longer be read, because this site's secret has changed since it was saved. Nothing can be sent until it is entered again.`,
+          "Enter the password above and save.",
+        ],
+        ready: false,
+        title: "Enter the email password again",
+      };
     case "missing_key":
       return status.onVercel
         ? {
             lines: [
-              "This site has no Resend API key, so it cannot send anything: no sign-up confirmations and no signing invitations.",
+              "Nothing can be sent yet: no signing invitations and no sign-up confirmations.",
+              "The quickest way is to send from your own Gmail, Yahoo or Zoho address: choose it above and enter its app password. To send from your own domain instead, connect Resend:",
             ],
             ready: false,
             steps: [
@@ -667,11 +764,12 @@ function describeEmailStatus(status: EmailStatus): {
                 text: "When the new deployment is ready, reload this page.",
               },
             ],
-            title: "Email is not connected",
+            title: "Email is not set up yet",
           }
         : {
             lines: [
-              "This site has no Resend API key, so it cannot send anything: no sign-up confirmations and no signing invitations.",
+              "Nothing can be sent yet: no signing invitations and no sign-up confirmations.",
+              "The quickest way is to send from your own Gmail, Yahoo or Zoho address: choose it above and enter its app password. To send from your own domain instead, connect Resend:",
             ],
             ready: false,
             steps: [
@@ -687,7 +785,7 @@ function describeEmailStatus(status: EmailStatus): {
               },
               { text: "Restart the app, then reload this page." },
             ],
-            title: "Email is not connected",
+            title: "Email is not set up yet",
           };
     case "test_sender":
       return {

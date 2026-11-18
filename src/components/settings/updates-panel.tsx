@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ShellButton } from "@/components/shared/form-shell";
 import type { UpdateStatus } from "@/lib/software-update";
 
-// The InkSeal section of Settings, for the administrator: the version this
+// The PheonixSign section of Settings, for the administrator: the version this
 // install runs, a button that asks GitHub whether a newer one is out, and
 // how to take it. Updating happens in the install's own GitHub repository,
 // not here: a workflow there opens a pull request, and Vercel deploys it.
@@ -59,10 +59,10 @@ export function UpdatesPanel({
         <div className="space-y-2">
           <p className="section-eyebrow">Administrator</p>
           <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-(--fg)">
-            InkSeal
+            PheonixSign
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-(--secondary)">
-            This site runs InkSeal version{" "}
+            This site runs PheonixSign version{" "}
             <span
               className="font-bold text-(--fg)"
               data-testid="running-version"
@@ -75,7 +75,7 @@ export function UpdatesPanel({
                 (commit <code className="text-(--fg)">{status.commit}</code>)
               </>
             ) : null}
-            . InkSeal is based on SignuDoc, and new SignuDoc versions are
+            . PheonixSign is based on SignuDoc, and new SignuDoc versions are
             published on{" "}
             <a
               className={linkClassName}

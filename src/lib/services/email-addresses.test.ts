@@ -6,6 +6,7 @@ import {
   extractEmailAddress,
   getAddressDomain,
   isResendTestSender,
+  withSenderAddress,
 } from "./email-addresses.ts";
 
 const base = {
@@ -56,14 +57,14 @@ test("characters that mean something in an email header are dropped from the nam
   );
 });
 
-test("an install with no name, and the hosted service, send as InkSeal", () => {
+test("an install with no name, and the hosted service, send as PheonixSign", () => {
   assert.equal(
     buildEmailAddresses({ ...base, organizationName: null }).senderAddress,
-    "InkSeal <onboarding@resend.dev>",
+    "PheonixSign <onboarding@resend.dev>",
   );
   assert.equal(
     buildEmailAddresses({ ...base, hosted: true }).senderAddress,
-    "InkSeal <onboarding@resend.dev>",
+    "PheonixSign <onboarding@resend.dev>",
   );
 });
 
@@ -90,4 +91,21 @@ test("Resend's test address is recognized with or without a display name", () =>
   assert.equal(isResendTestSender("Acme <onboarding@resend.dev>"), true);
   assert.equal(isResendTestSender("sign@acme.com"), false);
   assert.equal(isResendTestSender("sign@notresend.dev"), false);
+});
+
+test("a mailbox sends as itself under the same display name", () => {
+  assert.deepEqual(
+    withSenderAddress(
+      { senderAddress: "Acme <onboarding@resend.dev>", supportAddress: null },
+      "me@gmail.com",
+    ),
+    { senderAddress: "Acme <me@gmail.com>", supportAddress: null },
+  );
+  assert.equal(
+    withSenderAddress(
+      { senderAddress: "bare@example.com", supportAddress: "help@x.test" },
+      "me@gmail.com",
+    ).senderAddress,
+    "me@gmail.com",
+  );
 });

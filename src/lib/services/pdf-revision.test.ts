@@ -212,7 +212,7 @@ test("each signer's revision keeps the signatures before it valid", async (t) =>
         signature: {
           fieldName: "Alice Example (signer 1)",
           name: "Alice Example",
-          reason: "Signed with InkSeal",
+          reason: "Signed with PheonixSign",
           signingTime: new Date(),
         },
       }),

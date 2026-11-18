@@ -4,7 +4,7 @@ import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import type { Color, PDFDocument, PDFFont, PDFPage } from "pdf-lib";
 
-// Fonts for the text InkSeal draws into finished PDFs: field values on the
+// Fonts for the text PheonixSign draws into finished PDFs: field values on the
 // signed document, and every line of the audit certificate.
 //
 // The standard PDF fonts can only draw Windows-1252, and pdf-lib throws on

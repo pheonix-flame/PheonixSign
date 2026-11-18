@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 
-// InkSeal is run by whoever deploys it. The project keeps no site and no
+// PheonixSign is run by whoever deploys it. The project keeps no site and no
 // mailbox of its own, so nothing in the repository may send a person or a
 // message to one. An install's contact address is the one its administrator
 // gave at setup, and reports about the project itself go through GitHub.

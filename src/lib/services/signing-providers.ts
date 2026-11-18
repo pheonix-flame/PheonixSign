@@ -17,7 +17,7 @@ import {
 // certificate in the signer's own name, for advanced (AdES) and qualified
 // (QES) electronic signatures.
 //
-// InkSeal prepares the signer's revision of the PDF and its hash; the
+// PheonixSign prepares the signer's revision of the PDF and its hash; the
 // provider identifies the signer, has them approve, and signs the hash.
 // Two kinds are supported, configured by environment variables:
 //
@@ -27,7 +27,7 @@ import {
 // - Any trust service provider with the Cloud Signature Consortium API v2
 //   (CSC_API_URL, CSC_CLIENT_ID, CSC_CLIENT_SECRET): the signer signs in at
 //   the provider twice, once to choose their certificate and once to
-//   authorize the signature of this hash. InkSeal builds the CMS.
+//   authorize the signature of this hash. PheonixSign builds the CMS.
 //
 // Both are outside Vercel, and the organization pays the provider. Nothing
 // here is used unless one is configured.

@@ -248,9 +248,9 @@ export function hasEnv(
 }
 
 /**
- * Hosted mode is for running InkSeal as a public service under its own
+ * Hosted mode is for running PheonixSign as a public service under its own
  * name: the landing page, the built-in legal and contact pages, and the
- * InkSeal name everywhere. Without it an install is neutral and carries
+ * PheonixSign name everywhere. Without it an install is neutral and carries
  * the name of the organization that runs it.
  */
 export function isHostedMode(env: EnvSource = process.env): boolean {

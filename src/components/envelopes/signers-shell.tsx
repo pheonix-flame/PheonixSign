@@ -122,6 +122,25 @@ const SIGNER_CHECK_CHOICES: readonly {
   },
 ];
 
+/** Who will be asked for an emailed code, in a sentence for the sender. */
+function describeOutsideCode(rule: {
+  accounts: boolean;
+  domains: string[];
+}): string {
+  const inside = [
+    rule.domains.length > 0
+      ? `an address at ${rule.domains.join(" or ")}`
+      : null,
+    rule.accounts ? "an account on this site" : null,
+  ].filter(Boolean);
+
+  if (inside.length === 0) {
+    return "Everyone you send this to will be asked for a one-time code, emailed to them, before they can open and sign it.";
+  }
+
+  return `People outside your organization will be asked for a one-time code, emailed to them, before they can open and sign. Inside means ${inside.join(", or ")}. You can ask for a code from anyone else below.`;
+}
+
 function signerCheckChoice(
   signer: Pick<SignerChecks, "requireEmailCode" | "wantsAccessCode">,
 ): SignerCheckChoice | "both" {
@@ -981,6 +1000,15 @@ export function SignersShell({
               Up to 10 signers per document.
             </p>
           </div>
+
+          {record?.outsideCode ? (
+            <p
+              className="notice notice-accent"
+              data-testid="outside-code-notice"
+            >
+              {describeOutsideCode(record.outsideCode)}
+            </p>
+          ) : null}
 
           {submissionError ? (
             <div className="notice notice-danger" role="alert">

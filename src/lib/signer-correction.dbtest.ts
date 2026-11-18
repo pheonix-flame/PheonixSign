@@ -10,7 +10,11 @@ import { PDFDocument } from "pdf-lib";
 import type pg from "pg";
 
 import { exportEnvelopeAuditCsv } from "./audit-export.ts";
-import { afterStatement, openTestDatabase } from "./db/test-database.ts";
+import {
+  afterStatement,
+  openTestDatabase,
+  turnOffOutsiderCodes,
+} from "./db/test-database.ts";
 import { ELECTRONIC_RECORDS_DISCLOSURE_VERSION } from "./electronic-records-disclosure.ts";
 import {
   correctSentEnvelopeSigner,
@@ -56,10 +60,14 @@ process.env.APP_URL ??= "https://sign.example.test";
 const DAY = 24 * 60 * 60;
 
 let database: pg.Pool;
+let restoreOutsiderCodes: () => Promise<void> = async () => undefined;
 const createdUsers: string[] = [];
 
 before(async () => {
   database = await openTestDatabase();
+  // Every signer here is outside the organization; these tests are not
+  // about the emailed code that outsiders are asked for.
+  restoreOutsiderCodes = await turnOffOutsiderCodes(database);
   globalThis.__signudocPgPool = database;
 });
 
@@ -67,6 +75,7 @@ after(async () => {
   await database.query(`delete from public."user" where id = any($1)`, [
     createdUsers,
   ]);
+  await restoreOutsiderCodes();
   await database.end();
 });
 

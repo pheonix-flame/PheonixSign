@@ -13,7 +13,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InkSeal",
+  title: "PheonixSign",
   description:
     "Free e-signature software for small businesses. Upload, send, sign — no enterprise circus required.",
   icons: {

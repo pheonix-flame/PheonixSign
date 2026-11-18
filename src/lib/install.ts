@@ -7,7 +7,7 @@ import { getBranding, isFreshInstall } from "./settings.ts";
 
 /**
  * Page title and description for an install that is not the hosted service:
- * the organization's name instead of InkSeal's own. The hosted service
+ * the organization's name instead of PheonixSign's own. The hosted service
  * keeps what the root layout says.
  */
 export async function getInstallMetadata(): Promise<Metadata> {

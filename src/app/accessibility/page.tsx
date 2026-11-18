@@ -7,8 +7,8 @@ import { resolvePublicSupportAddress } from "@/lib/public-contact";
 
 export const metadata: Metadata = {
   description:
-    "Read InkSeal's accessibility statement, current accessibility features, known limitations, and how to request assistance.",
-  title: "Accessibility Statement | InkSeal",
+    "Read PheonixSign's accessibility statement, current accessibility features, known limitations, and how to request assistance.",
+  title: "Accessibility Statement | PheonixSign",
 };
 
 export default async function AccessibilityPage() {
@@ -18,7 +18,7 @@ export default async function AccessibilityPage() {
 
   return (
     <PublicDocumentShell
-      description="InkSeal is committed to improving accessibility for people with disabilities. This statement describes what is currently supported, the known limitations in our launch-stage product, and how to request assistance or accommodation."
+      description="PheonixSign is committed to improving accessibility for people with disabilities. This statement describes what is currently supported, the known limitations in our launch-stage product, and how to request assistance or accommodation."
       lastUpdated="March 25, 2026"
       title="Accessibility Statement"
     >
@@ -27,13 +27,13 @@ export default async function AccessibilityPage() {
           Commitment
         </h2>
         <p>
-          We want InkSeal to be usable by as many people as possible, including
-          people who rely on keyboard navigation, screen readers, zoom, or other
-          assistive technologies. We use accessibility best practices and treat
-          accessibility feedback as a product priority.
+          We want PheonixSign to be usable by as many people as possible,
+          including people who rely on keyboard navigation, screen readers,
+          zoom, or other assistive technologies. We use accessibility best
+          practices and treat accessibility feedback as a product priority.
         </p>
         <p>
-          InkSeal is still a launch-stage product, and some parts of the
+          PheonixSign is still a launch-stage product, and some parts of the
           experience are more accessible than others. This statement is intended
           to be candid about the current state of the product and the help that
           is available right now.
@@ -79,8 +79,8 @@ export default async function AccessibilityPage() {
           </li>
           <li>
             Some uploaded PDFs may contain scanned images, complex layouts, or
-            third-party accessibility issues that InkSeal cannot fully correct
-            at display time.
+            third-party accessibility issues that PheonixSign cannot fully
+            correct at display time.
           </li>
         </ul>
       </section>
@@ -115,7 +115,7 @@ export default async function AccessibilityPage() {
         </h2>
         <p>
           We use WCAG 2.2 Level AA as a practical reference point when planning
-          improvements, but we do not claim that every part of InkSeal fully
+          improvements, but we do not claim that every part of PheonixSign fully
           conforms today.
         </p>
         <p>

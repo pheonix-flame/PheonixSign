@@ -1,6 +1,6 @@
 # Development
 
-How to run InkSeal on your own machine, test it, and find your way around the code. For deploying and running an install, see the [self-hosting guide](self-hosting.md).
+How to run PheonixSign on your own machine, test it, and find your way around the code. For deploying and running an install, see the [self-hosting guide](self-hosting.md).
 
 ## Run it locally
 
@@ -12,7 +12,7 @@ For development, or to try it on your own machine first.
 npm install
 ```
 
-InkSeal targets Node.js 24 and is built on Next.js 16.
+PheonixSign targets Node.js 24 and is built on Next.js 16.
 
 ### 2. Create your environment file
 
@@ -69,7 +69,7 @@ The first time you open the app it takes you to `/setup`, where you name the org
 4. Review and send.
 5. The first signer receives a secure link.
 6. Each signer completes their turn in order.
-7. InkSeal finalizes the signed PDF and audit certificate when the last signer finishes.
+7. PheonixSign finalizes the signed PDF and audit certificate when the last signer finishes.
 
 People added to receive a copy do not sign. They are sent the finished document and its certificate at step 7 and nothing before it.
 
@@ -94,13 +94,13 @@ E2E_STORAGE_DRIVER=blob BLOB_READ_WRITE_TOKEN=... npm run test:e2e
 
 ## Database
 
-InkSeal uses Postgres as its only database and talks to it with `pg`. Any Postgres 15 or newer works, including Neon and Supabase.
+PheonixSign uses Postgres as its only database and talks to it with `pg`. Any Postgres 15 or newer works, including Neon and Supabase.
 
 The schema lives in `db/migrations` as plain SQL files. `npm run db:migrate` applies the ones that have not run yet and records them in the `signudoc_migrations` table, so it is safe to run on every deploy.
 
 ## Email delivery
 
-InkSeal sends transactional email through Resend.
+PheonixSign sends transactional email through Resend.
 
 - The support address, where replies go, is asked for when the site is set up. It and the address email is sent from can be changed by the administrator under Settings, Organization. The sender address must be at a domain verified with Resend; the same page adds the domain to Resend, lists the DNS records and checks them. With a Resend API key that is only allowed to send, it points you at Resend's dashboard for that step instead.
 - `RESEND_FROM_EMAIL` and `SUPPORT_EMAIL` are optional. When set they take the place of the addresses saved in Settings, which then cannot be changed there, and with `SUPPORT_EMAIL` set the setup page does not ask for a support address.

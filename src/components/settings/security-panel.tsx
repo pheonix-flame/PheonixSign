@@ -24,6 +24,7 @@ const EVENT_LABELS: Record<SystemAuditEvent["event"], string> = {
   account_closure_requested: "Account closure requested",
   account_deleted: "Account deleted",
   email_domain_changed: "Email domain changed",
+  email_provider_changed: "Email sending changed",
   envelope_deleted: "Finished envelope deleted",
   identity_verification_revoked: "Identity confirmation taken back",
   identity_verified: "Identity confirmed",
@@ -95,6 +96,12 @@ function describeEvent(event: SystemAuditEvent): string {
       return metadata.action === "removed" ? "Removed" : "Replaced";
     case "email_domain_changed":
       return typeof metadata.domain === "string" ? metadata.domain : "";
+    case "email_provider_changed":
+      return metadata.action === "removed"
+        ? "Back to Resend"
+        : typeof metadata.address === "string"
+          ? `Sending from ${metadata.address}`
+          : "";
     case "envelope_deleted":
       return [
         typeof metadata.title === "string" ? `"${metadata.title}"` : null,

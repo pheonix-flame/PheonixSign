@@ -63,7 +63,7 @@ async function makePdf(): Promise<PDFDocument> {
 async function sealedWith(pki: TestPki, { timestamp = true } = {}) {
   return saveSealedPdf(await makePdf(), pki.seal, {
     name: "Harbour & Finch",
-    reason: "Signed with InkSeal",
+    reason: "Signed with PheonixSign",
     timestampUrl: timestamp ? pki.timestampUrl : null,
   });
 }
@@ -205,7 +205,7 @@ test("a CA-issued seal gets its chain, OCSP answers and an archive timestamp (B-
         1,
         stdout,
       );
-      assert.match(stdout, /InkSeal archive timestamp/);
+      assert.match(stdout, /PheonixSign archive timestamp/);
 
       // OpenSSL checks the archive timestamp against the bytes it covers
       // and the test CA.
@@ -400,7 +400,7 @@ test("a self-made seal without a timestamp is left as it is", async () => {
     publicKeyPem: publicKey,
   });
   const sealed = await sealForTheLongTerm(await makePdf(), identity, {
-    name: "InkSeal",
+    name: "PheonixSign",
     reason: "Signed",
   });
 

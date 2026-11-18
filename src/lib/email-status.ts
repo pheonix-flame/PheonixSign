@@ -6,6 +6,8 @@ import {
   getAddressDomain,
   isResendTestSender,
 } from "./services/email-addresses.ts";
+import type { SmtpProvider } from "./email-providers.ts";
+import { loadEmailTransport } from "./email-transport.ts";
 import { resolveEmailDriver } from "./services/email.ts";
 import {
   getSettings,
@@ -38,6 +40,18 @@ export type EmailDnsRecord = {
 export type EmailStatus =
   /** Development: messages are written to disk, not sent. */
   | { state: "capture" }
+  /**
+   * Sending through a mailbox chosen in Settings (Gmail, Yahoo, Zoho or
+   * another mail server). Tested once a test email has gone through it.
+   */
+  | {
+      address: string;
+      provider: SmtpProvider;
+      state: "mailbox";
+      tested: boolean;
+    }
+  /** A mailbox is chosen, but its saved password can no longer be read. */
+  | { address: string; provider: SmtpProvider; state: "mailbox_unreadable" }
   /**
    * No Resend API key, so nothing can be sent. On Vercel the steps to fix it
    * are Vercel's, which the page spells out.
@@ -387,6 +401,33 @@ async function inspectEmail({
       markReady: noop,
       status: { state: "capture" },
     };
+  }
+
+  // A mailbox chosen in Settings is what sends, whatever Resend has.
+  if (!domainsClient) {
+    const transport = await loadEmailTransport(env);
+
+    if (transport) {
+      const resolved = settings ?? (await getSettings(env));
+
+      return {
+        client: null,
+        domainId: null,
+        markReady: noop,
+        status: transport.readable
+          ? {
+              address: transport.view.address,
+              provider: transport.view.provider,
+              state: "mailbox",
+              tested: resolved.emailReadyAt !== null,
+            }
+          : {
+              address: transport.view.address,
+              provider: transport.view.provider,
+              state: "mailbox_unreadable",
+            },
+      };
+    }
   }
 
   const client = domainsClient ?? createDomainsClient(env);

@@ -169,3 +169,33 @@ export async function recordAuditEventWhileWaitedOn<T>(
     client.release();
   }
 }
+
+/**
+ * Turns off the emailed code for signers outside the organization, for
+ * tests about something else whose signers are all outsiders. Returns how
+ * to put the settings back as they were.
+ */
+export async function turnOffOutsiderCodes(
+  database: pg.Pool,
+): Promise<() => Promise<void>> {
+  const before = await database.query<{ externalSignerCode: boolean }>(
+    `select external_signer_code as "externalSignerCode" from app_settings`,
+  );
+  const existed = before.rowCount === 1;
+
+  await database.query(
+    `
+      insert into app_settings (id, signup_mode, external_signer_code, created_at, updated_at)
+      values (true, 'open', false, 1, 1)
+      on conflict (id) do update set external_signer_code = false
+    `,
+  );
+
+  return async () => {
+    await database.query(
+      existed
+        ? `update app_settings set external_signer_code = ${before.rows[0]?.externalSignerCode === false ? "false" : "true"}`
+        : `delete from app_settings`,
+    );
+  };
+}

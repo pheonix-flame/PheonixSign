@@ -1,6 +1,6 @@
 # Release and change control
 
-InkSeal has no numbered releases. Each commit on `main` is a version. Your install runs whichever commit you last pulled into your copy (see [Keep your install up to date](../self-hosting.md#keep-your-install-up-to-date)). Change control is about deciding which commit you run and showing that it still works.
+PheonixSign has no numbered releases. Each commit on `main` is a version. Your install runs whichever commit you last pulled into your copy (see [Keep your install up to date](../self-hosting.md#keep-your-install-up-to-date)). Change control is about deciding which commit you run and showing that it still works.
 
 ## Evidence each version gives you
 
@@ -44,4 +44,4 @@ The following are changes too, and go through the same record:
 - a new administrator;
 - turning Part 11 mode off or on.
 
-Changes made inside InkSeal are also in the install audit trail. Changes made in the hosting consoles are not, so record them yourself.
+Changes made inside PheonixSign are also in the install audit trail. Changes made in the hosting consoles are not, so record them yourself.
