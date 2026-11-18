@@ -12,10 +12,14 @@
  *   the Vercel Marketplace.
  * - POSTGRES_URL / POSTGRES_URL_NON_POOLING: set by Supabase through the
  *   Vercel Marketplace.
+ * - The same names starting with INKSEAL_: what Vercel sets when the
+ *   database is connected to the project with "INKSEAL" as its prefix.
  */
 const DATABASE_URL_PAIRS = [
   ["DATABASE_URL", "DATABASE_URL_UNPOOLED"],
   ["POSTGRES_URL", "POSTGRES_URL_NON_POOLING"],
+  ["INKSEAL_DATABASE_URL", "INKSEAL_DATABASE_URL_UNPOOLED"],
+  ["INKSEAL_POSTGRES_URL", "INKSEAL_POSTGRES_URL_NON_POOLING"],
 ];
 
 export const DATABASE_URL_VARIABLES = DATABASE_URL_PAIRS.map(

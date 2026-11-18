@@ -34,6 +34,33 @@ test("migrations prefer the direct URL that belongs to the URL in use", () => {
   assert.equal(resolveMigrationDatabaseUrl({}), null);
 });
 
+test("a database connected with the INKSEAL prefix is found", () => {
+  const env = {
+    INKSEAL_DATABASE_URL: "postgres://c",
+    INKSEAL_DATABASE_URL_UNPOOLED: "postgres://c-direct",
+    INKSEAL_POSTGRES_URL: "postgres://c-pooled",
+    INKSEAL_POSTGRES_URL_NON_POOLING: "postgres://c-direct-too",
+  };
+
+  assert.deepEqual(resolveDatabaseUrl(env), {
+    name: "INKSEAL_DATABASE_URL",
+    value: "postgres://c",
+  });
+  assert.deepEqual(resolveMigrationDatabaseUrl(env), {
+    name: "INKSEAL_DATABASE_URL_UNPOOLED",
+    value: "postgres://c-direct",
+  });
+  assert.deepEqual(
+    resolveDatabaseUrl({ INKSEAL_POSTGRES_URL: "postgres://d" }),
+    { name: "INKSEAL_POSTGRES_URL", value: "postgres://d" },
+  );
+  // Unprefixed names still come first.
+  assert.equal(
+    resolveDatabaseUrl({ ...env, DATABASE_URL: "postgres://a" })?.name,
+    "DATABASE_URL",
+  );
+});
+
 test("an unpooled URL alone is not enough for the app", () => {
   assert.equal(
     resolveDatabaseUrl({ DATABASE_URL_UNPOOLED: "postgres://a-direct" }),
